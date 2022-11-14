@@ -9,14 +9,22 @@
 # 5. Backtest
 
 import os
-from time import sleep
 import signal
 import sys
 
 from dotenv import load_dotenv
 from api.ws import WebSocket
+from api.rest_client import RestClient
 
 load_dotenv()
+
+
+def signal_handler(sig, frame):
+    print('You pressed Ctrl+C!')
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
 
 api_key = os.getenv("TESTNET_API_KEY")
 api_secret = os.getenv("TESTNET_API_SECRET")
@@ -25,16 +33,6 @@ ws_public_url = os.getenv("TESTNET_WS_PUBLIC_URL")
 
 if __name__ == "__main__":
     ws = WebSocket(ws_public_url)
-    print("Hello world - I am the stat bot :)")
+    rc = RestClient(api_url)
     print(f"Ping: {ws.ping()}")
-
-    ws.subscribe_to_kline()
-
-    def signal_handler(sig, frame):
-        print('You pressed Ctrl+C!')
-        sys.exit(0)
-
-    signal.signal(signal.SIGINT, signal_handler)
-
-    while True:
-        sleep(1)
+    print(f"Symbols: {rc.get_symbols()}")

@@ -19,10 +19,3 @@ class WebSocket:
     def ping(self):
         self._ws.send('{"op":"ping"}')
         return self._ws.recv()
-
-    def subscribe_to_kline(self):
-        print("Subscribed to kline")
-
-        def handle_message(msg: str):
-            print(msg)
-        self._ws_usdt_perpetual.kline_stream(handle_message, ["DOTUSDT"], "D")
