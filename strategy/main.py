@@ -51,8 +51,6 @@ if __name__ == "__main__":
     failures = 0
     for symbol in symbols:
         name = symbol["name"]
-        if "BTC" in name:
-            print(f"Found Bitcoin: {name}")
         prices, error = rc.get_price_history(
             symbol=name,
             interval=60,
