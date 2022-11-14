@@ -9,15 +9,33 @@
 # 5. Backtest
 
 import os
+from time import sleep
+import signal
+import sys
+
 from dotenv import load_dotenv
-from pybit import HTTP
+from api.ws import WebSocket
 
 load_dotenv()
 
 api_key = os.getenv("TESTNET_API_KEY")
 api_secret = os.getenv("TESTNET_API_SECRET")
 api_url = os.getenv("TESTNET_REST_BASE_URL")
+ws_public_url = os.getenv("TESTNET_WS_PUBLIC_URL")
 
 if __name__ == "__main__":
-    session = HTTP(api_url)
+    ws = WebSocket(ws_public_url)
     print("Hello world - I am the stat bot :)")
+    print(f"Ping: {ws.ping()}")
+
+    ws.subscribe_to_kline()
+
+    def signal_handler(sig, frame):
+        print('You pressed Ctrl+C!')
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
+
+    while True:
+        sleep(1)
+
