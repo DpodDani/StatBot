@@ -1,7 +1,8 @@
 import datetime
+from time import sleep
 
 import pybit.exceptions
-from pybit import inverse_perpetual
+from pybit import usdt_perpetual
 
 
 def _get_start_time_in_seconds(interval: int | str, limit: float):
@@ -17,7 +18,7 @@ def _get_start_time_in_seconds(interval: int | str, limit: float):
 class RestClient:
     def __init__(self, url: str):
         self._url = url
-        self._client = inverse_perpetual.HTTP(endpoint=self._url)
+        self._client = usdt_perpetual.HTTP(endpoint=self._url)
 
     def get_symbols(self, trading=None, maker_rebate=False) -> list:
         symbols = []
@@ -42,10 +43,10 @@ class RestClient:
         return symbols
 
     def get_price_history(self, symbol, interval, limit):
-        print("Fetching price history for symbol:", symbol)
         from_time = _get_start_time_in_seconds(interval, limit)
         prices = []
         try:
+            sleep(0.1)
             prices = self._client.query_mark_price_kline(
                 symbol=symbol,
                 interval=interval,
@@ -53,5 +54,5 @@ class RestClient:
                 from_time=from_time,
             )
         except pybit.exceptions.InvalidRequestError:
-            print(f"Failed to fetch price for symbol: {symbol}")
-        return prices
+            return None, True
+        return prices, False

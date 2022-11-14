@@ -11,6 +11,7 @@
 import os
 import signal
 import sys
+import json
 
 from dotenv import load_dotenv
 from api.ws import WebSocket
@@ -41,12 +42,37 @@ if __name__ == "__main__":
     if len(symbols) < 0:
         print("No tradeable symbols found. Exiting.")
         sys.exit(0)
+    else:
+        print(f"Fetched {len(symbols)} symbols")
 
     # 2. Get price history
-    for symbol in symbols[:10]:
-        test_symbol = symbol["name"]
-        prices = rc.get_price_history(test_symbol, interval=60, limit=200)
-        if prices:
-            print("Prices:", prices)
+    price_histories = {}
+    success = 0
+    failures = 0
+    for symbol in symbols:
+        name = symbol["name"]
+        if "BTC" in name:
+            print(f"Found Bitcoin: {name}")
+        prices, error = rc.get_price_history(
+            symbol=name,
+            interval=60,
+            limit=200)
 
+        if error:
+            failures += 1
+        else:
+            price_histories[name] = prices
+            success += 1
+
+        if (success + failures) % 20 == 0:
+            print(f"Successes: {success}. Failures: {failures}")
+
+    # 3. Output prices to JSON file
+    history_count = len(price_histories)
+    if history_count > 0:
+        filename = "1_price_histories.json"
+        print(f"Writing price histories to {filename}")
+        with open(filename, "w") as fh:
+            json.dump(price_histories, fh, indent=4)
+        print(f"Saved prices to {filename} for {history_count} symbols")
 
