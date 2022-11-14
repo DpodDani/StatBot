@@ -35,5 +35,18 @@ if __name__ == "__main__":
     ws = WebSocket(ws_public_url)
     rc = RestClient(api_url)
     print(f"Ping: {ws.ping()}")
-    print(f"Symbols: {rc.get_symbols()}")
-    print(f"Tradeable symbols with maker rebate: {rc.get_symbols(True)}")
+
+    # 1. Get tradable symbols
+    symbols = rc.get_symbols(trading=True)
+    if len(symbols) < 0:
+        print("No tradeable symbols found. Exiting.")
+        sys.exit(0)
+
+    # 2. Get price history
+    for symbol in symbols[:10]:
+        test_symbol = symbol["name"]
+        prices = rc.get_price_history(test_symbol, interval=60, limit=200)
+        if prices:
+            print("Prices:", prices)
+
+

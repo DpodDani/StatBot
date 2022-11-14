@@ -1,4 +1,17 @@
+import datetime
+
+import pybit.exceptions
 from pybit import inverse_perpetual
+
+
+def _get_start_time_in_seconds(interval: int | str, limit: float):
+    start = 0
+    now = datetime.datetime.now()
+    if interval == 60:
+        start = now - datetime.timedelta(hours=limit)
+    elif interval == "D":
+        start = now - datetime.timedelta(days=limit)
+    return int(start.timestamp())
 
 
 class RestClient:
@@ -27,3 +40,18 @@ class RestClient:
             symbols = list(filter(lambda x: float(x["maker_fee"]) < 0, symbols))
 
         return symbols
+
+    def get_price_history(self, symbol, interval, limit):
+        print("Fetching price history for symbol:", symbol)
+        from_time = _get_start_time_in_seconds(interval, limit)
+        prices = []
+        try:
+            prices = self._client.query_mark_price_kline(
+                symbol=symbol,
+                interval=interval,
+                limit=limit,
+                from_time=from_time,
+            )
+        except pybit.exceptions.InvalidRequestError:
+            print(f"Failed to fetch price for symbol: {symbol}")
+        return prices
