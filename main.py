@@ -4,6 +4,7 @@ import sys
 import json
 
 from strategy.stat_arbitrage import StatArbitrage
+from strategy.cointegration import get_cointegration_pairs
 
 from dotenv import load_dotenv
 
@@ -29,17 +30,22 @@ if __name__ == "__main__":
     )
 
     # 1) Get tradable symbols
-    symbols = sa.get_tradeable_symbols()
+    # symbols = sa.get_tradeable_symbols()
 
     # 2.1) Get price history
-    price_histories = sa.get_price_histories(symbols)
+    # price_histories = sa.get_price_histories(symbols)
 
     # 2.2) Output prices to JSON file
-    # filename = "1_price_histories.json"
+    filename = "1_price_histories.json"
     # if len(price_histories) > 0:
     #     print(f"Writing price histories to {filename}")
     #     with open(filename, "w") as fh:
     #         json.dump(price_histories, fh, indent=4)
     #     print(f"Saved prices to {filename} for {len(price_histories)} symbols")
 
+    # 3) Find co-integrated pairs
+    with open(filename) as json_file:
+        price_data = json.load(json_file)
+        if len(price_data) > 0:
+            cointegrated_pairs = get_cointegration_pairs(price_data)
 
