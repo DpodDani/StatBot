@@ -18,7 +18,7 @@ class RestClient:
             print(f"Error in response: {resp}")
             return symbols
 
-        symbols = resp["result"]
+        symbols = list(filter(lambda x: x["quote_currency"] == "USDT", resp["result"]))
 
         if trading:
             symbols = list(filter(lambda x: x["status"] == "Trading", symbols))
