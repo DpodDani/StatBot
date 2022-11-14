@@ -36,3 +36,4 @@ if __name__ == "__main__":
     rc = RestClient(api_url)
     print(f"Ping: {ws.ping()}")
     print(f"Symbols: {rc.get_symbols()}")
+    print(f"Tradeable symbols with maker rebate: {rc.get_symbols(True)}")

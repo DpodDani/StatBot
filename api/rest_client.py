@@ -6,13 +6,24 @@ class RestClient:
         self._url = url
         self._client = inverse_perpetual.HTTP(endpoint=self._url)
 
-    def get_symbols(self) -> list:
+    def get_symbols(self, trading=None, maker_rebate=False) -> list:
+        symbols = []
         resp = self._client.query_symbol()
-        if "ret_msg" in resp and "ret_code" in resp:
-            if resp["ret_msg"] == "OK" and resp["ret_code"] == 0:
-                return resp["result"]
-            else:
-                print(f"Error in response: {resp}")
-        else:
+
+        if "ret_msg" not in resp or "ret_code" not in resp:
             print("No 'ret_msg' or 'ret_code' found in response")
-        return []
+            return symbols
+
+        if resp["ret_msg"] != "OK" or resp["ret_code"] != 0:
+            print(f"Error in response: {resp}")
+            return symbols
+
+        symbols = resp["result"]
+
+        if trading:
+            symbols = list(filter(lambda x: x["status"] == "Trading", symbols))
+
+        if maker_rebate:
+            symbols = list(filter(lambda x: float(x["maker_fee"]) < 0, symbols))
+
+        return symbols
