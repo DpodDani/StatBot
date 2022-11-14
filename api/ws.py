@@ -1,8 +1,9 @@
 import websocket
 from pybit import usdt_perpetual
 
+
 class WebSocket:
-    def __init__(self, url):
+    def __init__(self, url: str):
         self.url = url
         self._ws = websocket.WebSocket()
         self._ws.connect(self.url)
@@ -22,7 +23,6 @@ class WebSocket:
     def subscribe_to_kline(self):
         print("Subscribed to kline")
 
-        def handle_message(msg):
+        def handle_message(msg: str):
             print(msg)
         self._ws_usdt_perpetual.kline_stream(handle_message, ["DOTUSDT"], "D")
-
