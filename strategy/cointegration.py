@@ -6,6 +6,7 @@ import numpy as np
 from statsmodels.tsa.stattools import coint
 from dataclasses import dataclass
 
+
 def _form_key(symbol1, symbol2):
     return f"{symbol1}-{symbol2}"
 
@@ -67,6 +68,13 @@ class Cointegration:
     @property
     def hedge_ratio(self):
         return round(self._hedge_ratio, 2)
+
+    def __repr__(self):
+        return f"Cointegration(p_value={self.p_value}, " \
+                f"c_value={self.c_value}, t_value={self.t_value}, " \
+                f"hedge_ratio={self.hedge_ratio}, " \
+                f"cointegrated={self.cointegrated}, " \
+                f"zero_crossing={self.zero_crossings})"
 
 
 def calculate_cointegration(series_1, series_2):
