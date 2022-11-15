@@ -18,19 +18,22 @@ def _extract_close_prices(prices: dict):
         if math.isnan(close_price):
             return []
         close_prices.append(close_price)
-    print("Close prices:", close_prices)
     return close_prices
 
 
 # TODO: Complete this function!
 def get_cointegration_pairs(price_data: dict):
-    pairs = {}
+    seen = {}
+    pairs = []
+    filename = "2_cointegrated_pairs.csv"
+    count = 0
+    print(f"Getting co-integrated pairs (and saving into {filename})")
     for symbol, data in price_data.items():
         for symbol2, data2 in price_data.items():
             if symbol == symbol2:
                 continue
-            if _form_key(symbol, symbol2) in pairs \
-                    or _form_key(symbol2, symbol) in pairs:
+            if _form_key(symbol, symbol2) in seen \
+                    or _form_key(symbol2, symbol) in seen:
                 # not using continue cause 180x180 is BIG!
                 break
 
@@ -38,10 +41,31 @@ def get_cointegration_pairs(price_data: dict):
             series_2 = _extract_close_prices(data2["result"])
 
             coint = calculate_cointegration(series_1, series_2)
+            if coint.cointegrated:
+                seen[_form_key(symbol, symbol2)] = True
+                pairs.append({
+                    "sym_1": symbol,
+                    "sym_2": symbol2,
+                    "p_value": coint.p_value,
+                    "t_value": coint.t_value,
+                    "c_value": coint.c_value,
+                    "hedge_ratio": coint.hedge_ratio,
+                    "zero_crossings": coint.zero_crossings,
+                })
+
+        count += 1
+        if count % 20 == 0:
+            print(f"Cointegration - Processed {count} symbols.")
+
+    coint_df = pd.DataFrame(pairs)
+    coint_df = coint_df.sort_values("zero_crossings", ascending=False)
+    coint_df.to_csv(filename)
+
+    return coint_df
 
 
 def _calculate_spread(series_1, series_2, hedge_ratio):
-    return pd.DataFrame(series_1) - (pd.DataFrame(series_2) * hedge_ratio)
+    return pd.Series(series_1) - (pd.Series(series_2) * hedge_ratio)
 
 
 @dataclass
@@ -74,7 +98,7 @@ class Cointegration:
                 f"c_value={self.c_value}, t_value={self.t_value}, " \
                 f"hedge_ratio={self.hedge_ratio}, " \
                 f"cointegrated={self.cointegrated}, " \
-                f"zero_crossing={self.zero_crossings})"
+                f"zero_crossings={self.zero_crossings})"
 
 
 def calculate_cointegration(series_1, series_2):
