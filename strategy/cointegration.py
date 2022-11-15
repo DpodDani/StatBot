@@ -59,7 +59,7 @@ def get_cointegration_pairs(price_data: dict):
 
     coint_df = pd.DataFrame(pairs)
     coint_df = coint_df.sort_values("zero_crossings", ascending=False)
-    coint_df.to_csv(filename)
+    coint_df.to_csv(filename, index=False)
 
     return coint_df
 
