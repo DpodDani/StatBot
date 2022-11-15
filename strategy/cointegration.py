@@ -36,6 +36,8 @@ def get_cointegration_pairs(price_data: dict):
             series_1 = _extract_close_prices(data["result"])
             series_2 = _extract_close_prices(data2["result"])
 
+            coint = calculate_cointegration(series_1, series_2)
+
 
 def _calculate_spread(series_1, series_2, hedge_ratio):
     return pd.DataFrame(series_1) - (pd.DataFrame(series_2) * hedge_ratio)
@@ -46,6 +48,7 @@ class Cointegration:
     _p_value: float
     _c_value: float
     _t_value: float
+    _hedge_ratio: float
     cointegrated: bool
     zero_crossings: int
 
@@ -60,6 +63,10 @@ class Cointegration:
     @property
     def t_value(self):
         return round(self._t_value, 2)
+
+    @property
+    def hedge_ratio(self):
+        return round(self._hedge_ratio, 2)
 
 
 def calculate_cointegration(series_1, series_2):
@@ -88,6 +95,7 @@ def calculate_cointegration(series_1, series_2):
         p_value,
         c_value,
         t_value,
+        hedge_ratio,
         coint_flag,
         zero_crossings
     )
