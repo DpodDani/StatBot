@@ -45,9 +45,13 @@ if __name__ == "__main__":
 
     # 3) Find co-integrated pairs (and output to CSV file)
     coint_pairs_filename = "2_cointegrated_pairs.csv"
-    with open(filename) as json_file:
-        price_data = json.load(json_file)
-        if len(price_data) > 0:
-            coint_pairs_df = get_cointegration_pairs(price_data)
-            coint_pairs_df.to_csv(coint_pairs_filename, index=False)
+    # with open(filename) as json_file:
+    #     price_data = json.load(json_file)
+    #     if len(price_data) > 0:
+    #           print(f"Getting co-integrated pairs (and saving into {coint_pairs_filename})")
+    #         coint_pairs_df = get_cointegration_pairs(price_data)
+    #         coint_pairs_df.to_csv(coint_pairs_filename, index=False)
+
+    # 4) Plot trends and save to file (for backtesting)
+
 

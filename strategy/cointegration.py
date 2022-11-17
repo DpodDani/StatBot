@@ -21,13 +21,10 @@ def _extract_close_prices(prices: dict):
     return close_prices
 
 
-# TODO: Complete this function!
 def get_cointegration_pairs(price_data: dict):
     seen = {}
     pairs = []
-    filename = "2_cointegrated_pairs.csv"
     count = 0
-    print(f"Getting co-integrated pairs (and saving into {filename})")
     for symbol, data in price_data.items():
         for symbol2, data2 in price_data.items():
             if symbol == symbol2:
