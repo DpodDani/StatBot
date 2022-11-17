@@ -17,9 +17,11 @@ from api.rest_client import RestClient
 class StatArbitrage:
     def __init__(self,
                  ws_public_url: str,
-                 rest_api_url: str):
+                 rest_api_url: str,
+                 price_interval: int):
         self._ws = WebSocket(ws_public_url)
         self._rc = RestClient(rest_api_url)
+        self._interval = price_interval
         print(f"Ping: {self._ws.ping()}")
 
     def get_tradeable_symbols(self):
@@ -39,7 +41,7 @@ class StatArbitrage:
             name = symbol["name"]
             prices, error = self._rc.get_price_history(
                 symbol=name,
-                interval=60,
+                interval=self._interval,
                 limit=200)
 
             if error:

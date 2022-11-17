@@ -5,6 +5,7 @@ import json
 
 from strategy.stat_arbitrage import StatArbitrage
 from strategy.cointegration import get_cointegration_pairs
+from strategy.plot import plot_trends
 
 from dotenv import load_dotenv
 
@@ -23,10 +24,14 @@ api_secret = os.getenv("TESTNET_API_SECRET")
 api_url = os.getenv("TESTNET_REST_BASE_URL")
 ws_public_url = os.getenv("TESTNET_WS_PUBLIC_URL")
 
+interval = int(os.getenv("TIME_RANGE"))
+zscore_window = int(os.getenv("Z_SCORE_LIMIT"))
+
 if __name__ == "__main__":
     sa = StatArbitrage(
         ws_public_url=ws_public_url,
         rest_api_url=api_url,
+        price_interval=interval,
     )
 
     # 1) Get tradable symbols
@@ -53,5 +58,13 @@ if __name__ == "__main__":
     #         coint_pairs_df.to_csv(coint_pairs_filename, index=False)
 
     # 4) Plot trends and save to file (for backtesting)
-
+    symbol_1 = "BLZUSDT"
+    symbol_2 = "SLPUSDT"
+    with open(filename) as json_file:
+        price_data = json.load(json_file)
+        if len(price_data) > 0:
+            print(f"Plotting trend for ({symbol_1}) and ({symbol_2})")
+            symbol_1_data = price_data[symbol_1]["result"]
+            symbol_2_data = price_data[symbol_2]["result"]
+            plot_trends(symbol_1_data, symbol_2_data, zscore_window)
 

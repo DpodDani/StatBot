@@ -11,7 +11,7 @@ def _form_key(symbol1, symbol2):
     return f"{symbol1}-{symbol2}"
 
 
-def _extract_close_prices(prices: dict):
+def extract_close_prices(prices: dict):
     close_prices = []
     for price in prices:
         close_price = price["close"]
@@ -34,8 +34,8 @@ def get_cointegration_pairs(price_data: dict):
                 # not using continue cause 180x180 is BIG!
                 break
 
-            series_1 = _extract_close_prices(data["result"])
-            series_2 = _extract_close_prices(data2["result"])
+            series_1 = extract_close_prices(data["result"])
+            series_2 = extract_close_prices(data2["result"])
 
             coint = calculate_cointegration(series_1, series_2)
             if coint.cointegrated:
@@ -60,7 +60,7 @@ def get_cointegration_pairs(price_data: dict):
     return coint_df
 
 
-def _calculate_spread(series_1, series_2, hedge_ratio):
+def calculate_spread(series_1, series_2, hedge_ratio):
     return pd.Series(series_1) - (pd.Series(series_2) * hedge_ratio)
 
 
@@ -109,7 +109,7 @@ def calculate_cointegration(series_1, series_2):
     model = sm.OLS(series_1, series_2).fit()
     hedge_ratio = model.params[0]
 
-    spread = _calculate_spread(series_1, series_2, hedge_ratio)
+    spread = calculate_spread(series_1, series_2, hedge_ratio)
 
     # np.where(<condition>) --> returns elements which are non-zero
     # np.diff(<array>) --> returns difference between two contiguous elements
@@ -127,3 +127,14 @@ def calculate_cointegration(series_1, series_2):
         coint_flag,
         zero_crossings
     )
+
+
+def calculate_zscore(spread_data, window):
+    df = pd.DataFrame(spread_data)
+    rolling_window = df.rolling(center=False, window=window)
+    mean = rolling_window.mean()
+    standard_deviation = rolling_window.std()
+    spread_value = df.rolling(center=False, window=1).mean()
+
+    df["z-score"] = (spread_value - mean) / standard_deviation
+    return df["z-score"].astype(float).values
