@@ -43,9 +43,11 @@ if __name__ == "__main__":
     #         json.dump(price_histories, fh, indent=4)
     #     print(f"Saved prices to {filename} for {len(price_histories)} symbols")
 
-    # 3) Find co-integrated pairs
+    # 3) Find co-integrated pairs (and output to CSV file)
+    coint_pairs_filename = "2_cointegrated_pairs.csv"
     with open(filename) as json_file:
         price_data = json.load(json_file)
         if len(price_data) > 0:
-            cointegrated_pairs = get_cointegration_pairs(price_data)
+            coint_pairs_df = get_cointegration_pairs(price_data)
+            coint_pairs_df.to_csv(coint_pairs_filename, index=False)
 
