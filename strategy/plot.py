@@ -42,6 +42,7 @@ def plot_trends(symbol_data_1, symbol_data_2, window):
     df_2[symbol_2] = prices_2
     df_2["Spread"] = spread
     df_2["Z-Score"] = zscore
+    df_2 = df_2[df_2["Z-Score"].notna()]
     df_2.to_csv(backtest_filename, index=False)
     print(f"Saved backtest data to {backtest_filename}")
 
