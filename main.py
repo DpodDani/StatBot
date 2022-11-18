@@ -64,7 +64,6 @@ if __name__ == "__main__":
         price_data = json.load(json_file)
         if len(price_data) > 0:
             print(f"Plotting trend for ({symbol_1}) and ({symbol_2})")
-            symbol_1_data = price_data[symbol_1]["result"]
-            symbol_2_data = price_data[symbol_2]["result"]
-            plot_trends(symbol_1_data, symbol_2_data, zscore_window)
-
+            symbol_data_1 = {"symbol": symbol_1, "data": price_data[symbol_1]["result"]}
+            symbol_data_2 = {"symbol": symbol_2, "data": price_data[symbol_2]["result"]}
+            plot_trends(symbol_data_1, symbol_data_2, zscore_window)

@@ -5,3 +5,4 @@ Pipfile
 .DS_Store
 *.json
 *.csv
+*.png
