@@ -1,18 +1,20 @@
-import datetime
+import datetime, typing
 from time import sleep
 
 import pybit.exceptions
 from pybit import usdt_perpetual
 
 
-def _get_start_time_in_seconds(interval: int | str, limit: float):
+def _get_start_time_in_seconds(interval: typing.Union[int, str], limit: float):
     start = 0
     now = datetime.datetime.now()
     if interval == 60:
         start = now - datetime.timedelta(hours=limit)
+        start = int(start.timestamp())
     elif interval == "D":
         start = now - datetime.timedelta(days=limit)
-    return int(start.timestamp())
+        start = int(start.timestamp())
+    return start
 
 
 class RestClient:

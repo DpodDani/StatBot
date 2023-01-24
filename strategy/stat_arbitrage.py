@@ -8,7 +8,7 @@
 #   4.3 - filter for best co-integrated pairs
 # 5. Backtest
 
-import sys
+import sys, time
 
 from api.ws import WebSocket
 from api.rest_client import RestClient
@@ -33,24 +33,30 @@ class StatArbitrage:
             print(f"Fetched {len(symbols)} symbols")
         return symbols
 
-    def get_price_histories(self, symbols):
+    def get_price_histories(self, symbols, limit):
         price_histories = {}
         success = 0
         failures = 0
+        skipped = 0
         for symbol in symbols:
             name = symbol["name"]
             prices, error = self._rc.get_price_history(
                 symbol=name,
                 interval=self._interval,
-                limit=200)
+                limit=limit)
 
             if error:
                 failures += 1
             else:
-                price_histories[name] = prices
-                success += 1
+                if len(prices["result"]) < limit:
+                    skipped += 1
+                else:
+                    price_histories[name] = prices
+                    success += 1
 
-            if (success + failures) % 20 == 0:
-                print(f"Successes: {success}. Failures: {failures}")
+            time.sleep(0.1) # 100ms
+
+            if (success + failures + skipped) % 20 == 0:
+                print(f"Successes: {success}. Failures: {failures}. Skipped: {skipped}")
 
         return price_histories

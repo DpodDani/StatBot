@@ -19,13 +19,14 @@ def signal_handler(sig, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
-api_key = os.getenv("TESTNET_API_KEY")
-api_secret = os.getenv("TESTNET_API_SECRET")
-api_url = os.getenv("TESTNET_REST_BASE_URL")
-ws_public_url = os.getenv("TESTNET_WS_PUBLIC_URL")
+api_key = os.getenv("TESTNET_API_KEY", "")
+api_secret = os.getenv("TESTNET_API_SECRET", "")
+api_url = os.getenv("TESTNET_REST_BASE_URL", "")
+ws_public_url = os.getenv("TESTNET_WS_PUBLIC_URL", "")
 
-interval = int(os.getenv("TIME_RANGE"))
-zscore_window = int(os.getenv("Z_SCORE_LIMIT"))
+interval = int(os.getenv("TIME_RANGE", 60))
+zscore_window = int(os.getenv("Z_SCORE_LIMIT", 21))
+limit = int(os.getenv("HISTORY_DEPTH", 0))
 
 if __name__ == "__main__":
     sa = StatArbitrage(
@@ -35,27 +36,27 @@ if __name__ == "__main__":
     )
 
     # 1) Get tradable symbols
-    # symbols = sa.get_tradeable_symbols()
+    symbols = sa.get_tradeable_symbols()
 
     # 2.1) Get price history
-    # price_histories = sa.get_price_histories(symbols)
+    price_histories = sa.get_price_histories(symbols, limit)
 
     # 2.2) Output prices to JSON file
     filename = "1_price_histories.json"
-    # if len(price_histories) > 0:
-    #     print(f"Writing price histories to {filename}")
-    #     with open(filename, "w") as fh:
-    #         json.dump(price_histories, fh, indent=4)
-    #     print(f"Saved prices to {filename} for {len(price_histories)} symbols")
+    if len(price_histories) > 0:
+        print(f"Writing price histories to {filename}")
+        with open(filename, "w") as fh:
+            json.dump(price_histories, fh, indent=4)
+        print(f"Saved prices to {filename} for {len(price_histories)} symbols")
 
     # 3) Find co-integrated pairs (and output to CSV file)
     coint_pairs_filename = "2_cointegrated_pairs.csv"
-    # with open(filename) as json_file:
-    #     price_data = json.load(json_file)
-    #     if len(price_data) > 0:
-    #           print(f"Getting co-integrated pairs (and saving into {coint_pairs_filename})")
-    #         coint_pairs_df = get_cointegration_pairs(price_data)
-    #         coint_pairs_df.to_csv(coint_pairs_filename, index=False)
+    with open(filename) as json_file:
+        price_data = json.load(json_file)
+        if len(price_data) > 0:
+            print(f"Getting co-integrated pairs (and saving into {coint_pairs_filename})")
+            coint_pairs_df = get_cointegration_pairs(price_data)
+            coint_pairs_df.to_csv(coint_pairs_filename, index=False)
 
     # 4) Plot trends and save to file (for backtesting)
     symbol_1 = "BLZUSDT"
