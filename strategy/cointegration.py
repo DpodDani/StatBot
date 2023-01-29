@@ -3,6 +3,8 @@ import statsmodels.api as sm
 import pandas as pd
 import numpy as np
 
+from typing import List, Union
+
 from statsmodels.tsa.stattools import coint
 from dataclasses import dataclass
 
@@ -23,8 +25,9 @@ def extract_close_prices(prices: dict):
 
 def get_cointegration_pairs(price_data: dict):
     seen = {}
-    pairs = []
+    pairs: List[dict[str, Union[str, float, int]]] = []
     count = 0
+    skipped = 0
     for symbol, data in price_data.items():
         for symbol2, data2 in price_data.items():
             if symbol == symbol2:
@@ -38,6 +41,11 @@ def get_cointegration_pairs(price_data: dict):
             series_2 = extract_close_prices(data2["result"])
 
             coint = calculate_cointegration(series_1, series_2)
+
+            if not coint:
+                skipped += 1
+                continue
+
             if coint.cointegrated:
                 seen[_form_key(symbol, symbol2)] = True
                 pairs.append({
@@ -51,8 +59,8 @@ def get_cointegration_pairs(price_data: dict):
                 })
 
         count += 1
-        if count % 20 == 0:
-            print(f"Cointegration - Processed {count} symbols.")
+        if (count + skipped) % 20 == 0:
+            print(f"Cointegration - Processed {count} symbols. Skipped {skipped} symbols.")
 
     coint_df = pd.DataFrame(pairs)
     coint_df = coint_df.sort_values("zero_crossings", ascending=False)
@@ -115,6 +123,9 @@ def calculate_cointegration(series_1, series_2):
     # np.diff(<array>) --> returns difference between two contiguous elements
     # np.sign(<array>) --> returns -1 for negative numbers, 0 for 0, and 1 for positive numbers
     zero_crossings = len(np.where(np.diff(np.sign(spread)))[0])
+
+    if not isinstance(p_value, float):
+        return None
 
     if p_value < 0.5 and t_value < c_value:
         coint_flag = True
