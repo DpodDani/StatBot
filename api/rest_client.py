@@ -1,11 +1,13 @@
-import datetime, typing
+import datetime
 from time import sleep
+
+from typing import Tuple, Union
 
 import pybit.exceptions
 from pybit import usdt_perpetual
 
 
-def _get_start_time_in_seconds(interval: typing.Union[int, str], limit: float):
+def _get_start_time_in_seconds(interval: Union[int, str], limit: float):
     start = 0
     now = datetime.datetime.now()
     if interval == 60:
@@ -44,7 +46,7 @@ class RestClient:
 
         return symbols
 
-    def get_price_history(self, symbol, interval, limit):
+    def get_price_history(self, symbol, interval, limit) -> Union[dict, None]:
         from_time = _get_start_time_in_seconds(interval, limit)
         prices = []
         try:
@@ -56,5 +58,5 @@ class RestClient:
                 from_time=from_time,
             )
         except pybit.exceptions.InvalidRequestError:
-            return None, True
-        return prices, False
+            return None
+        return prices

@@ -40,12 +40,12 @@ class StatArbitrage:
         skipped = 0
         for symbol in symbols:
             name = symbol["name"]
-            prices, error = self._rc.get_price_history(
+            prices = self._rc.get_price_history(
                 symbol=name,
                 interval=self._interval,
                 limit=limit)
 
-            if error:
+            if not prices:
                 failures += 1
             else:
                 if len(prices["result"]) < limit:
