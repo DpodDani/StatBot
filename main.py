@@ -2,6 +2,7 @@ import os
 import signal
 import sys
 import json
+import argparse
 
 from strategy.stat_arbitrage import StatArbitrage
 from strategy.cointegration import get_cointegration_pairs
@@ -27,6 +28,15 @@ ws_public_url = os.getenv("TESTNET_WS_PUBLIC_URL", "")
 interval = int(os.getenv("TIME_RANGE", 60))
 zscore_window = int(os.getenv("Z_SCORE_LIMIT", 21))
 limit = int(os.getenv("HISTORY_DEPTH", 0))
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--sym1", help="Symbol 1", default="BATUSDT")
+parser.add_argument("--sym2", help="Symbol 2", default="IMXUSDT")
+
+args = parser.parse_args()
+symbol_1 = args.sym1
+symbol_2 = args.sym2
+
 
 if __name__ == "__main__":
     sa = StatArbitrage(
@@ -59,8 +69,6 @@ if __name__ == "__main__":
             coint_pairs_df.to_csv(coint_pairs_filename, index=False)
 
     # 4) Plot trends and save to file (for backtesting)
-    symbol_1 = "BLZUSDT"
-    symbol_2 = "SLPUSDT"
     with open(filename) as json_file:
         price_data = json.load(json_file)
         if len(price_data) > 0:
