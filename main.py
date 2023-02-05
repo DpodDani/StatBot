@@ -27,6 +27,8 @@ symbol_2 = args.sym2
 if __name__ == "__main__":
     config = Config()
 
+    print(f"Running for symbol 1 ({symbol_1}) and symbol 2 ({symbol_2})")
+
     rc = RestClient(url=config.api_url, api_key=config.api_key, api_secret=config.api_secret)
 
     # test = Test(config, symbol_1, symbol_2)
@@ -34,4 +36,5 @@ if __name__ == "__main__":
 
     execution = Execution(config, rc, symbol_1, symbol_2)
     print("Position info:", execution.get_position_info("MATICUSDT"))
-    execution.run()
+    print("Result from closing all positions:", execution.close_all_positions(1))
+    # execution.run()

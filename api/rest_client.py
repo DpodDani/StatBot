@@ -63,3 +63,32 @@ class RestClient:
 
     def get_my_position(self, symbol: str):
         return self._client.my_position(symbol=symbol)
+    
+    def close_position(self, symbol, side, size, position_idx) -> bool:
+        """Closing a position involves placing the opposite side
+
+            So, if you have an open buy position, you want to place a sell order.
+            More info on reduce_only here: https://www.bybit.com/en-US/help-center/bybitHC_Article?id=360039260574&language=en_US
+        """
+        resp = self._client.place_active_order(
+            symbol=symbol,
+            side=side,
+            order_type="Market",
+            qty=size,
+            time_in_force="GoodTillCancel",
+            reduce_only=True,
+            close_on_trigger=False,
+            position_idx=position_idx
+        )
+
+        if resp["ret_code"] == 0:
+            return True
+        else:
+            return False
+        
+    def cancel_all_active_orders(self, symbol: str) -> bool:
+        resp = self._client.cancel_all_active_orders(symbol=symbol)
+        if resp["ret_code"] != 0:
+            return False
+        else:
+            return True

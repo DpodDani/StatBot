@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Union
+from typing import Union, List
 import config
 
 from pybit import usdt_perpetual
@@ -19,6 +19,7 @@ class TradeDetails:
 class PositionInfo:
     size: float
     side: str
+    idx: int
 
 class Execution:
     def __init__(self, config: config.Config, rest_client: RestClient, symbol_1: str, symbol_2: str):
@@ -85,7 +86,7 @@ class Execution:
             return TradeDetails(symbol, order_price, stop_loss, quantity)
         return None
 
-    def get_position_info(self, symbol: str):
+    def get_position_info(self, symbol: str) -> List[PositionInfo]:
         positions = []
 
         position = self._rc.get_my_position(symbol)
@@ -97,11 +98,38 @@ class Execution:
             return positions
         
         # expect max. 2 positions - one for buy and one for sell
+        # for this strategy, we will only get 1 result, because we are either buying or selling a symbol, not both!
         for pos in position["result"]:
             if pos["size"] > 0:
-                positions.append(PositionInfo(size=pos["size"], side=pos["side"]))
+                positions.append(PositionInfo(size=pos["size"], side=pos["side"], idx=pos["position_idx"]))
 
         return positions
+
+    def place_marker_close_order(self, symbol, position, size, position_idx):
+        return self._rc.close_position(symbol, position, size, position_idx)
+
+    # cancel all active orders
+    def close_all_positions(self, kill_switch: int):
+        def reverse_side(side):
+            if side == "Buy":
+                return "Sell"
+            else:
+                return "Buy"
+
+        for symbol in [self._symbol_1, self._symbol_2]:
+            res = self._rc.cancel_all_active_orders(symbol)
+            print(f"Result from cancelling all active orders for symbol ({symbol}):", res)
+
+            pos_info = self.get_position_info(symbol)
+            if len(pos_info) < 1:
+                print(f"Found no position info for symbol: {symbol}. Skipping")
+                continue
+
+            res = self.place_marker_close_order(symbol, reverse_side(pos_info[0].side), pos_info[0].size, pos_info[0].idx)
+            print(f"Result from closing positions for symbol {symbol}:", res)
+
+        kill_switch = 0 # indicates that we've closed all our positions and we're ready to start looking to open again
+        return kill_switch
 
     def run(self):
         ws = usdt_perpetual.WebSocket(
@@ -117,7 +145,6 @@ class Execution:
             print(trade_details)
             print(msg["data"][0])
 
-        ws.orderbook_25_stream(handler, self._symbol_1 or "BTCUSDT")
-        ws.orderbook_25_stream(handler, self._symbol_2 or "BATUSDT")
+        ws.orderbook_25_stream(handler, [self._symbol_1, self._symbol_2])
 
         sleep(5)
