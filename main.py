@@ -4,6 +4,7 @@ import argparse
 
 from config import Config
 from strategy.test import Test
+from strategy.execution import Execution
 
 
 def signal_handler(sig, frame):
@@ -25,5 +26,8 @@ symbol_2 = args.sym2
 if __name__ == "__main__":
     config = Config()
 
-    test = Test(config, symbol_1, symbol_2)
-    test.run()
+    # test = Test(config, symbol_1, symbol_2)
+    # test.run()
+
+    execution = Execution(config, symbol_1, symbol_2)
+    execution.run()
