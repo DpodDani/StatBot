@@ -1,13 +1,15 @@
 from dataclasses import dataclass
+from typing import Union
 import config
 
 from pybit import usdt_perpetual
 from time import sleep
 
-from cointegration import extract_close_prices
+from strategy.cointegration import extract_close_prices
 
 @dataclass
 class TradeDetails:
+    symbol: str
     order_price: float
     stop_loss: float
     quantity: float
@@ -18,7 +20,7 @@ class Execution:
         self._symbol_1 = symbol_1
         self._symbol_2 = symbol_2
 
-    def get_trade_details(self, orderbook: list, direction: str = "Long", capital=0) -> TradeDetails:
+    def get_trade_details(self, orderbook: list, direction: str = "Long", capital=0) -> Union[TradeDetails, None]:
         
         # Set calculation and output variables
         price_rounding = 20
@@ -31,9 +33,10 @@ class Execution:
 
         # Get prices, stop loss and quantity
         if orderbook:
+            symbol = orderbook[0]["symbol"]
 
             # Set price rounding
-            if orderbook[0]["symbol"] == self._symbol_1:
+            if symbol == self._symbol_1:
                 price_rounding = self._config.price_rounding_ticker_1
                 quantity_rounding = self._config.quantity_rounding_ticker_1
             else:
@@ -72,7 +75,8 @@ class Execution:
                 # Calculate quantity
                 quantity = round(capital / order_price, quantity_rounding)
         
-        return TradeDetails(order_price, stop_loss, quantity)
+            return TradeDetails(symbol, order_price, stop_loss, quantity)
+        return None
 
     def run(self):
         ws = usdt_perpetual.WebSocket(
@@ -84,10 +88,11 @@ class Execution:
         )
     
         def handler(msg):
-            print("Data 1", msg["data"][0])
-            print("Data N", msg["data"][-1])
+            trade_details = self.get_trade_details(orderbook=msg["data"], direction="Long", capital=1000)
+            print(trade_details)
+            print(msg["data"][0])
 
         ws.orderbook_25_stream(handler, self._symbol_1 or "BTCUSDT")
         ws.orderbook_25_stream(handler, self._symbol_2 or "BATUSDT")
 
-        sleep(3)
+        sleep(5)
