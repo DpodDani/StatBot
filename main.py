@@ -5,6 +5,7 @@ import argparse
 from config import Config
 from strategy.test import Test
 from strategy.execution import Execution
+from api.rest_client import RestClient
 
 
 def signal_handler(sig, frame):
@@ -26,8 +27,11 @@ symbol_2 = args.sym2
 if __name__ == "__main__":
     config = Config()
 
+    rc = RestClient(url=config.api_url, api_key=config.api_key, api_secret=config.api_secret)
+
     # test = Test(config, symbol_1, symbol_2)
     # test.run()
 
-    execution = Execution(config, symbol_1, symbol_2)
+    execution = Execution(config, rc, symbol_1, symbol_2)
+    print("Position info:", execution.get_position_info("MATICUSDT"))
     execution.run()

@@ -6,6 +6,7 @@ from pybit import usdt_perpetual
 from time import sleep
 
 from strategy.cointegration import extract_close_prices
+from api.rest_client import RestClient
 
 @dataclass
 class TradeDetails:
@@ -14,9 +15,15 @@ class TradeDetails:
     stop_loss: float
     quantity: float
 
+@dataclass
+class PositionInfo:
+    size: float
+    side: str
+
 class Execution:
-    def __init__(self, config: config.Config, symbol_1: str, symbol_2: str):
+    def __init__(self, config: config.Config, rest_client: RestClient, symbol_1: str, symbol_2: str):
         self._config = config
+        self._rc = rest_client
         self._symbol_1 = symbol_1
         self._symbol_2 = symbol_2
 
@@ -77,6 +84,24 @@ class Execution:
         
             return TradeDetails(symbol, order_price, stop_loss, quantity)
         return None
+
+    def get_position_info(self, symbol: str):
+        positions = []
+
+        position = self._rc.get_my_position(symbol)
+
+        if not "ret_msg" in position.keys() or not position["ret_msg"] == "OK":
+            return positions
+        
+        if not len(position["result"]) > 0:
+            return positions
+        
+        # expect max. 2 positions - one for buy and one for sell
+        for pos in position["result"]:
+            if pos["size"] > 0:
+                positions.append(PositionInfo(size=pos["size"], side=pos["side"]))
+
+        return positions
 
     def run(self):
         ws = usdt_perpetual.WebSocket(

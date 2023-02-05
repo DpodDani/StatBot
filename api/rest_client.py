@@ -20,9 +20,9 @@ def _get_start_time_in_seconds(interval: Union[int, str], limit: float):
 
 
 class RestClient:
-    def __init__(self, url: str):
+    def __init__(self, url: str, api_key: Union[str, None] = None, api_secret: Union[str, None] = None):
         self._url = url
-        self._client = usdt_perpetual.HTTP(endpoint=self._url)
+        self._client = usdt_perpetual.HTTP(endpoint=self._url, api_key=api_key, api_secret=api_secret)
 
     def get_symbols(self, trading=None, maker_rebate=False) -> list:
         symbols = []
@@ -46,7 +46,7 @@ class RestClient:
 
         return symbols
 
-    def get_price_history(self, symbol, interval, limit) -> Union[dict, None]:
+    def get_price_history(self, symbol: str, interval: int, limit: int) -> Union[dict, None]:
         from_time = _get_start_time_in_seconds(interval, limit)
         prices = []
         try:
@@ -60,3 +60,6 @@ class RestClient:
         except pybit.exceptions.InvalidRequestError:
             return None
         return prices
+
+    def get_my_position(self, symbol: str):
+        return self._client.my_position(symbol=symbol)
