@@ -18,7 +18,7 @@ def extract_close_prices(prices: dict):
     for price in prices:
         close_price = price["close"]
         if math.isnan(close_price):
-            return []
+            return [] # because we need all close prices to properly figure out the z-score
         close_prices.append(close_price)
     return close_prices
 
