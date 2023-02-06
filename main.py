@@ -35,6 +35,6 @@ if __name__ == "__main__":
     # test.run()
 
     execution = Execution(config, rc, symbol_1, symbol_2)
-    print("Position info:", execution.get_position_info("MATICUSDT"))
-    print("Result from closing all positions:", execution.close_all_positions(1))
-    # execution.run()
+    # print("Position info:", execution.get_position_info("MATICUSDT"))
+    # print("Result from closing all positions:", execution.close_all_positions(1))
+    execution.run()

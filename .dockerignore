@@ -1,0 +1,9 @@
+.venv
+.vscode
+.DS_Store
+*.json
+.git*
+*.csv
+*.ipynb
+Pipfile*
+README.md

@@ -147,4 +147,5 @@ class Execution:
 
         ws.orderbook_25_stream(handler, [self._symbol_1, self._symbol_2])
 
-        sleep(5)
+        while True:
+            sleep(1)
