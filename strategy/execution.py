@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Union, List
+from typing import Union, List, Literal
 import config
 
 from pybit import usdt_perpetual
@@ -133,6 +133,27 @@ class Execution:
 
     def set_leverage(self, ticker):
         return self._rc.set_leverage(ticker)
+
+    def place_order(self, trade_details: TradeDetails, direction: Literal["Long", "Short"], limit_order: bool = True) -> bool:
+        side = "Buy" if direction == "Long" else "Sell"
+
+        if limit_order:
+            result = self._rc.place_limit_order(
+                symbol=trade_details.symbol,
+                side=side,
+                qty=trade_details.quantity,
+                price=trade_details.order_price,
+                stop_loss=trade_details.stop_loss,
+            )
+        else:
+            result = self._rc.place_market_order(
+                symbol=trade_details.symbol,
+                side=side,
+                qty=trade_details.quantity,
+                stop_loss=trade_details.stop_loss,
+            )
+
+        return result
 
     def run(self):
         ws = usdt_perpetual.WebSocket(
