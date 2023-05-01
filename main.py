@@ -38,3 +38,4 @@ if __name__ == "__main__":
     print("Position info:", execution.get_position_info("MATICUSDT"))
     print("Result from closing all positions:", execution.close_all_positions(1))
     # execution.run()
+    # print("Setting leverage for MATICUSDT:", execution.set_leverage("MATICUSDT"))

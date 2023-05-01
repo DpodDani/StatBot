@@ -92,3 +92,20 @@ class RestClient:
             return False
         else:
             return True
+        
+    def set_leverage(self, symbol: str, buy_leverage: int = 1, sell_leverage: int = 1) -> bool:
+        try:
+            resp = self._client.cross_isolated_margin_switch(
+                symbol=symbol,
+                is_isolated=True,
+                buy_leverage=buy_leverage,
+                sell_leverage=sell_leverage,
+            )
+        except pybit.exceptions.InvalidRequestError as e:
+            print("Failed to set leverage:", e)
+            return False
+
+        if resp["ret_code"] == 0:
+            return True
+        else:
+            return False

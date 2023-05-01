@@ -131,6 +131,9 @@ class Execution:
         kill_switch = 0 # indicates that we've closed all our positions and we're ready to start looking to open again
         return kill_switch
 
+    def set_leverage(self, ticker):
+        return self._rc.set_leverage(ticker)
+
     def run(self):
         ws = usdt_perpetual.WebSocket(
             test=True,
