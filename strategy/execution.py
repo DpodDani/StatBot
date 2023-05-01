@@ -81,7 +81,7 @@ class Execution:
                 stop_loss = round(order_price * (1 - self._config.stop_loss_fail_safe), price_rounding)
 
                 # Calculate quantity
-                quantity = round(capital / order_price, quantity_rounding)
+                quantity = round(capital / order_price, quantity_rounding) if capital > 0 else 0
         
             return TradeDetails(symbol, order_price, stop_loss, quantity)
         return None
