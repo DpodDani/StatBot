@@ -76,9 +76,11 @@ class Execution:
                     # setting this to nearest_bid increases changes of order NOT being cancelled,
                     # and at the same time the order not being filled
                     order_price = nearest_bid # can also be (nearest_bid + nearest_ask) / 2
+                    stop_loss = round(order_price * (1 - self._config.stop_loss_fail_safe), price_rounding)
                 else: # short position
                     order_price = nearest_ask
-                stop_loss = round(order_price * (1 - self._config.stop_loss_fail_safe), price_rounding)
+                    stop_loss = round(order_price * (1 + self._config.stop_loss_fail_safe), price_rounding)
+                
 
                 # Calculate quantity
                 quantity = round(capital / order_price, quantity_rounding) if capital > 0 else 0
@@ -134,7 +136,7 @@ class Execution:
     def set_leverage(self, ticker):
         return self._rc.set_leverage(ticker)
 
-    def place_order(self, trade_details: TradeDetails, direction: Literal["Long", "Short"], limit_order: bool = True) -> bool:
+    def place_order(self, trade_details: TradeDetails, direction: Literal["Long", "Short"], limit_order: bool = True) -> dict:
         side = "Buy" if direction == "Long" else "Sell"
 
         if limit_order:
@@ -155,7 +157,8 @@ class Execution:
 
         return result
 
-    def run(self):
+    @staticmethod
+    def _get_order_book(ticker) -> list:
         ws = usdt_perpetual.WebSocket(
             test=True,
             ping_interval=2,  # the default is 30
@@ -163,12 +166,37 @@ class Execution:
             domain="bybit",  # the default is "bybit"
             retries=0
         )
-    
+
+        orderbooks: List[list] = []
+        done = False
         def handler(msg):
-            trade_details = self.get_trade_details(orderbook=msg["data"], direction="Long", capital=1000)
-            print(trade_details)
-            print(msg["data"][0])
+            nonlocal done
+            orderbooks.append(msg["data"])
+            done = True
 
-        ws.orderbook_25_stream(handler, [self._symbol_1, self._symbol_2])
+        ws.orderbook_25_stream(handler, ticker)
 
-        sleep(5)
+        while not done:
+            sleep(0.1)
+
+        return orderbooks[0]
+
+    def initalise_order_execution(self, ticker: str, direction: Literal["Long", "Short"], capital: int) -> int:
+        orderbook = Execution._get_order_book(ticker)
+        trade_details = self.get_trade_details(orderbook, direction, capital)
+
+        if not trade_details:
+            print("Orderbook is empty, so cannot initialise order exeuction")
+            return -1
+
+        order = self.place_order(trade_details, direction)
+        if "result" in order:
+            if "order_id" in order["result"]:
+                return int(order["results"]["order_id"])
+            
+        print("Did not place order :(")
+        return -1
+
+    def run(self):
+        order_id = self.initalise_order_execution(self._symbol_1, "Short", 1000)
+        print("Order ID:", order_id)

@@ -19,7 +19,7 @@ class Config:
     # different number of decimal places can be used for the price and/or quantity for different tickers
     price_rounding_ticker_1: int = 4
     price_rounding_ticker_2: int = 4
-    quantity_rounding_ticker_1: int = 1
+    quantity_rounding_ticker_1: int = 3
     quantity_rounding_ticker_2: int = 13
 
     tradeable_capital_usdt: int = 2000 # tradeable capital to be split between both pairs

@@ -16,7 +16,7 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--sym1", help="Symbol 1", default="BATUSDT")
+parser.add_argument("--sym1", help="Symbol 1", default="MATICUSDT")
 parser.add_argument("--sym2", help="Symbol 2", default="IMXUSDT")
 
 args = parser.parse_args()
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     # test.run()
 
     execution = Execution(config, rc, symbol_1, symbol_2)
-    print("Position info:", execution.get_position_info("MATICUSDT"))
-    print("Result from closing all positions:", execution.close_all_positions(1))
-    # execution.run()
+    # print("Position info:", execution.get_position_info("MATICUSDT"))
+    # print("Result from closing all positions:", execution.close_all_positions(1))
+    execution.run()
     # print("Setting leverage for MATICUSDT:", execution.set_leverage("MATICUSDT"))

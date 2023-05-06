@@ -110,7 +110,7 @@ class RestClient:
         else:
             return False
         
-    def place_limit_order(self, symbol: str, side: str, qty: float, price: float, stop_loss: float) -> bool:
+    def place_limit_order(self, symbol: str, side: str, qty: float, price: float, stop_loss: float) -> dict:
         resp = self._client.place_active_order(
             symbol=symbol,
             side=side,
@@ -121,16 +121,17 @@ class RestClient:
             reduce_only=False,
             close_on_trigger=False,
             stop_loss=stop_loss,
+            position_idx=0,
         )
 
         if resp["ret_code"] == 0:
             print("Placed limit order:", resp)
-            return True
         else:
             print("Failed to place limit order :(")
-            return False
+
+        return resp
         
-    def place_market_order(self, symbol: str, side: str, qty: float, stop_loss: float) -> bool:
+    def place_market_order(self, symbol: str, side: str, qty: float, stop_loss: float) -> dict:
         resp = self._client.place_active_order(
             symbol=symbol,
             side=side,
@@ -140,11 +141,12 @@ class RestClient:
             reduce_only=False,
             close_on_trigger=False,
             stop_loss=stop_loss,
+            position_idx=0,
         )
 
         if resp["ret_code"] == 0:
             print("Placed market order:", resp)
-            return True
         else:
             print("Failed to place market order :(")
-            return False
+        
+        return resp
