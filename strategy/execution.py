@@ -4,6 +4,7 @@ import config
 
 from pybit import usdt_perpetual
 from time import sleep
+import datetime
 
 from strategy.cointegration import extract_close_prices
 from api.rest_client import RestClient
@@ -196,7 +197,32 @@ class Execution:
             
         print("Did not place order :(")
         return -1
+    
+    @staticmethod
+    def _get_timestamps(timeframe: Literal[60, "D"], history_depth: int) -> tuple:
+        start_time = next_time = 0
+        now = datetime.datetime.now()
+
+        if timeframe == 60: # timeframe of 1 hour
+            start_time = now - datetime.timedelta(hours=history_depth)
+            next_time = now + datetime.timedelta(minutes=history_depth)
+        elif timeframe == "D": # timeframe of 1 day
+            start_time = now - datetime.timedelta(days=history_depth)
+            next_time = now + datetime.timedelta(hours=history_depth)
+
+        start_time_seconds = int(start_time.timestamp())
+        next_time_seconds = int(next_time.timestamp())
+        now_seconds = int(now.timestamp())
+
+        return (
+            start_time_seconds,
+            now_seconds,
+            next_time_seconds,
+        )
+
 
     def run(self):
-        order_id = self.initalise_order_execution(self._symbol_1, "Short", 1000)
-        print("Order ID:", order_id)
+        # order_id = self.initalise_order_execution(self._symbol_1, "Short", 1000)
+        # print("Order ID:", order_id)
+        res = Execution._get_timestamps(60, 10)
+        print(res)
