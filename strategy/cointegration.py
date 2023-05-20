@@ -13,7 +13,7 @@ def _form_key(symbol1, symbol2):
     return f"{symbol1}-{symbol2}"
 
 
-def extract_close_prices(prices: dict):
+def extract_close_prices(prices: list):
     close_prices = []
     for price in prices:
         close_price = price["close"]

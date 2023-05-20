@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Union, List, Literal
+from typing import Union, List, Literal, Tuple
 import config
 
 from pybit import usdt_perpetual
@@ -198,8 +198,10 @@ class Execution:
         print("Did not place order :(")
         return -1
     
-    @staticmethod
-    def _get_timestamps(timeframe: Literal[60, "D"], history_depth: int) -> tuple:
+    def _get_timestamps(self) -> Tuple[int, int, int]:
+        timeframe = self._config.interval
+        history_depth = self._config.limit
+
         start_time = next_time = 0
         now = datetime.datetime.now()
 
@@ -209,6 +211,8 @@ class Execution:
         elif timeframe == "D": # timeframe of 1 day
             start_time = now - datetime.timedelta(days=history_depth)
             next_time = now + datetime.timedelta(hours=history_depth)
+        else:
+            return (0, 0, 0)
 
         start_time_seconds = int(start_time.timestamp())
         next_time_seconds = int(next_time.timestamp())
@@ -220,9 +224,39 @@ class Execution:
             next_time_seconds,
         )
 
+    # The K-line consists of the opening price, closing price, the highest price,
+    # and lowest price within a certain period of time
+    def get_price_klines(self, ticker: str) -> list:
+        kline_limit = self._config.limit
 
-    def run(self):
-        # order_id = self.initalise_order_execution(self._symbol_1, "Short", 1000)
-        # print("Order ID:", order_id)
-        res = Execution._get_timestamps(60, 10)
-        print(res)
+        # Get prices
+        time_start_seconds, _, _ = self._get_timestamps()
+        prices = self._rc.get_price_history(
+            ticker,
+            interval=self._config.interval,
+            limit=kline_limit,
+            from_time=time_start_seconds,
+        )
+
+        sleep(0.1) # manage API calls
+        
+        # prices is None if API error encountered
+        if prices and len(prices["result"]) == kline_limit:
+            return prices["result"]
+
+        return []
+    
+    def get_latest_klines(self, symbol_1: str, symbol_2: str) -> Tuple[list, list]:
+        series_1 = []
+        series_2 = []
+
+        prices_1 = self.get_price_klines(symbol_1)
+        prices_2 = self.get_price_klines(symbol_2)
+
+        if len(prices_1) > 0:
+            series_1 = extract_close_prices(prices_1)
+
+        if len(prices_2) > 0:
+            series_2 = extract_close_prices(prices_2)
+
+        return (series_1, series_2)

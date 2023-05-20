@@ -35,7 +35,9 @@ if __name__ == "__main__":
     # test.run()
 
     execution = Execution(config, rc, symbol_1, symbol_2)
-    # print("Position info:", execution.get_position_info("MATICUSDT"))
-    # print("Result from closing all positions:", execution.close_all_positions(1))
-    execution.run()
-    # print("Setting leverage for MATICUSDT:", execution.set_leverage("MATICUSDT"))
+    price_klines = execution.get_price_klines(symbol_1)
+    print(f"Price klines for {symbol_1}: {price_klines}")
+
+    latest_klines_1, latest_klines_2 = execution.get_latest_klines(symbol_1, symbol_2)
+    print(f"Latest klines for {symbol_1}: {latest_klines_1}")
+    print(f"Latest klines for {symbol_2}: {latest_klines_2}")

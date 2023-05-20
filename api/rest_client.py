@@ -46,9 +46,10 @@ class RestClient:
 
         return symbols
 
-    def get_price_history(self, symbol: str, interval: int, limit: int) -> Union[dict, None]:
-        from_time = _get_start_time_in_seconds(interval, limit)
-        prices = []
+    def get_price_history(self, symbol: str, interval: int, limit: int, from_time: int = -1) -> Union[dict, None]:
+        if from_time == -1:
+            from_time = _get_start_time_in_seconds(interval, limit)
+        prices = {}
         try:
             sleep(0.1)
             prices = self._client.query_mark_price_kline(
