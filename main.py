@@ -35,9 +35,12 @@ if __name__ == "__main__":
     # test.run()
 
     execution = Execution(config, rc, symbol_1, symbol_2)
-    price_klines = execution.get_price_klines(symbol_1)
-    print(f"Price klines for {symbol_1}: {price_klines}")
+    # price_klines = execution.get_price_klines(symbol_1)
+    # print(f"Price klines for {symbol_1}: {price_klines}")
 
-    latest_klines_1, latest_klines_2 = execution.get_latest_klines(symbol_1, symbol_2)
-    print(f"Latest klines for {symbol_1}: {latest_klines_1}")
-    print(f"Latest klines for {symbol_2}: {latest_klines_2}")
+    # latest_klines_1, latest_klines_2 = execution.get_latest_klines(symbol_1, symbol_2)
+    # print(f"Latest klines for {symbol_1}: {latest_klines_1}")
+    # print(f"Latest klines for {symbol_2}: {latest_klines_2}")
+
+    trade_liquidity = execution.get_trade_liquidity(symbol_1)
+    print(f"Trade liquidity for {symbol_1}:", trade_liquidity)

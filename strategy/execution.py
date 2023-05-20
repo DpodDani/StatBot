@@ -9,6 +9,8 @@ import datetime
 from strategy.cointegration import extract_close_prices
 from api.rest_client import RestClient
 
+from statistics import mean
+
 @dataclass
 class TradeDetails:
     symbol: str
@@ -260,3 +262,13 @@ class Execution:
             series_2 = extract_close_prices(prices_2)
 
         return (series_1, series_2)
+
+    def get_trade_liquidity(self, ticker: str) -> Tuple[float, float]:
+        trades = self._rc.get_public_trade_records(ticker, limit=50)
+
+        if not trades:
+            return (0,0)
+        
+        quantity_avg = mean([trade["qty"] for trade in trades])
+
+        return (quantity_avg, trades[0]["price"])

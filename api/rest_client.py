@@ -151,3 +151,16 @@ class RestClient:
             print("Failed to place market order :(")
         
         return resp
+    
+    def get_public_trade_records(self, symbol: str, limit: int = 10) -> list:
+        resp = self._client.public_trading_records(
+            symbol=symbol,
+            limit=limit, # number of trades to fetch
+        )
+
+        if resp["ret_code"] == 0:
+            print("Got public trades")
+            return resp["result"]
+        else:
+            print("Failed to get public trades :(")
+            return []
