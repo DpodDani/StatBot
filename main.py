@@ -49,8 +49,11 @@ if __name__ == "__main__":
     # trade_liquidity = execution.get_trade_liquidity(symbol_1)
     # print(f"Trade liquidity for {symbol_1}:", trade_liquidity)
 
-    latest_zscore = execution.get_latest_zscore(symbol_1, symbol_2)
-    if latest_zscore:
-        print(f"Latest Z-score:", latest_zscore[0], latest_zscore[1])
-    else:
-        print(f"Couldn't get latest zscore for {symbol_1} and {symbol_2}")
+    # latest_zscore = execution.get_latest_zscore(symbol_1, symbol_2)
+    # if latest_zscore:
+    #     print(f"Latest Z-score:", latest_zscore[0], latest_zscore[1])
+    # else:
+    #     print(f"Couldn't get latest zscore for {symbol_1} and {symbol_2}")
+
+    print(f"Found open position for ({symbol_1}):", execution.open_positions_found(symbol_1))
+    print(f"Found active order for ({symbol_1}):", execution.active_order_found(symbol_1))

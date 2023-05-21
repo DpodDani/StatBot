@@ -164,3 +164,15 @@ class RestClient:
         else:
             print("Failed to get public trades :(")
             return []
+        
+    def get_active_order(self, symbol: str) -> list:
+        resp = self._client.get_active_order(
+            symbol=symbol,
+            order_status="Created,New,PartiallyFilled,Active",
+        )
+
+        data = []
+        if resp["ret_code"] == 0:
+            if resp["result"]["data"]:
+                data = resp["result"]["data"]
+        return data

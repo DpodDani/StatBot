@@ -313,3 +313,17 @@ class Execution:
             signal_positive = False
 
         return (zscore, signal_positive)
+    
+    def open_positions_found(self, ticker: str):
+        positions = self.get_position_info(ticker)
+        if len(positions) > 0:
+            return True
+        else:
+            return False
+        
+    def active_order_found(self, ticker: str):
+        active_order = self._rc.get_active_order(ticker)
+        if len(active_order) > 0:
+            return True
+        else:
+            return False
