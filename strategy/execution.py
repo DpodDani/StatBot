@@ -359,3 +359,54 @@ class Execution:
                 existing_order["order_status"],
             )
         return None
+    
+    def check_order(
+        self,
+        ticker: str,
+        order_id: str,
+        remaining_capital: float,
+        direction: Literal["Long", "Short"] = "Long"
+    ):
+        orderbook = self._get_order_book(ticker)
+        trade_details = self.get_trade_details(orderbook)
+
+        # Get latest price
+        mid_price = 0
+        if trade_details:
+            mid_price = trade_details.order_price
+
+        # Get latest trade details
+        existing_order = self.query_existing_order(ticker, order_id)
+        
+        if not existing_order:
+            return None
+
+        order_price, quantity, order_status = existing_order
+
+        # Get open position
+        pos_price, pos_size = self.get_open_position(ticker, direction)
+
+        # Get active positions
+        active_price, active_quantity = self.get_active_position(ticker)
+
+        # Determine if trade is complete --> if it is, stop placing orders
+        if pos_size >= remaining_capital:
+            return "Trade complete" # TODO: Make ENUM!
+
+        # Determine action needed --> if positions filled, buy more
+        if order_status == "Filled":
+            return "Position filled" # TODO: Make ENUM!
+        
+        # Determine if order active --> if active, do nothing
+        if order_status in ["Created", "New"]:
+            return "Order active"
+        
+        # Determine if partially filled --> if partially filled, do nothing
+        if order_status == "PartiallyFilled":
+            return "Partial fill"
+        
+        # Determine if order failed --> if failed, try place order again
+        if order_status in ["Cancelled", "Rejected", "PendingCancel"]:
+            return "Try again"
+        
+        
