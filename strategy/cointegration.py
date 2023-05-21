@@ -148,4 +148,4 @@ def calculate_zscore(spread_data, window):
     spread_value = df.rolling(center=False, window=1).mean()
 
     df["z-score"] = (spread_value - mean) / standard_deviation
-    return df["z-score"].astype(float).values
+    return df["z-score"].astype(float).to_list()

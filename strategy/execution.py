@@ -11,6 +11,8 @@ from api.rest_client import RestClient
 
 from statistics import mean
 
+from strategy.cointegration import calculate_cointegration, calculate_spread, calculate_zscore
+
 @dataclass
 class TradeDetails:
     symbol: str
@@ -272,3 +274,11 @@ class Execution:
         quantity_avg = mean([trade["qty"] for trade in trades])
 
         return (quantity_avg, trades[0]["price"])
+    
+    def calculate_metrics(self, series_1, series_2) -> Tuple[bool, list]:
+        coint = calculate_cointegration(series_1, series_2)
+        if coint:
+            spread = calculate_spread(series_1, series_2, coint.hedge_ratio)
+            zscore = calculate_zscore(spread, self._config.zscore_window)
+            return (coint.cointegrated, zscore)
+        return (False, [])
