@@ -55,5 +55,8 @@ if __name__ == "__main__":
     # else:
     #     print(f"Couldn't get latest zscore for {symbol_1} and {symbol_2}")
 
-    print(f"Found open position for ({symbol_1}):", execution.open_positions_found(symbol_1))
-    print(f"Found active order for ({symbol_1}):", execution.active_order_found(symbol_1))
+    # print(f"Found open position for ({symbol_1}):", execution.open_positions_found(symbol_1))
+    # print(f"Found active order for ({symbol_1}):", execution.active_order_found(symbol_1))
+
+    print(f"Found active position for ({symbol_1}):", execution.get_active_position(symbol_1))
+    print(f"Found active position for ({symbol_2}):", execution.get_active_position(symbol_2))

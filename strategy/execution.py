@@ -22,6 +22,7 @@ class TradeDetails:
 
 @dataclass
 class PositionInfo:
+    order_price: float
     size: float
     side: str
     idx: int
@@ -108,7 +109,14 @@ class Execution:
         # for this strategy, we will only get 1 result, because we are either buying or selling a symbol, not both!
         for pos in position["result"]:
             if pos["size"] > 0:
-                positions.append(PositionInfo(size=pos["size"], side=pos["side"], idx=pos["position_idx"]))
+                positions.append(
+                    PositionInfo(
+                        order_price=pos["entry_price"],
+                        size=pos["size"],
+                        side=pos["side"],
+                        idx=pos["position_idx"]
+                    )
+                )
 
         return positions
 
@@ -327,3 +335,17 @@ class Execution:
             return True
         else:
             return False
+        
+    def get_open_position(self, ticker: str, direction: Literal["Long", "Short"] = "Long") -> Tuple[float, float]:
+        positions = self.get_position_info(ticker)
+        side = "Buy" if direction == "Long" else "Sell"
+        for position in positions:
+            if position.side == side:
+                return (position.order_price, position.size)
+        return (0, 0)
+    
+    def get_active_position(self, ticker: str):
+        active_order = self._rc.get_active_order(ticker)
+        if len(active_order) > 0:
+            return (active_order[0]["price"], active_order[0]["qty"])
+        return (0, 0)
