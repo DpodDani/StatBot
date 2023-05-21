@@ -15,6 +15,7 @@ def signal_handler(sig, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
+# 20230521 - Cointegrated pairs: 1000BTTUSDT,CHZUSDT
 parser = argparse.ArgumentParser()
 parser.add_argument("--sym1", help="Symbol 1", default="MATICUSDT")
 parser.add_argument("--sym2", help="Symbol 2", default="IMXUSDT")
@@ -34,6 +35,9 @@ if __name__ == "__main__":
     # test = Test(config, symbol_1, symbol_2)
     # test.run()
 
+    # import sys
+    # sys.exit(0)
+
     execution = Execution(config, rc, symbol_1, symbol_2)
     # price_klines = execution.get_price_klines(symbol_1)
     # print(f"Price klines for {symbol_1}: {price_klines}")
@@ -42,5 +46,11 @@ if __name__ == "__main__":
     # print(f"Latest klines for {symbol_1}: {latest_klines_1}")
     # print(f"Latest klines for {symbol_2}: {latest_klines_2}")
 
-    trade_liquidity = execution.get_trade_liquidity(symbol_1)
-    print(f"Trade liquidity for {symbol_1}:", trade_liquidity)
+    # trade_liquidity = execution.get_trade_liquidity(symbol_1)
+    # print(f"Trade liquidity for {symbol_1}:", trade_liquidity)
+
+    latest_zscore = execution.get_latest_zscore(symbol_1, symbol_2)
+    if latest_zscore:
+        print(f"Latest Z-score:", latest_zscore[0], latest_zscore[1])
+    else:
+        print(f"Couldn't get latest zscore for {symbol_1} and {symbol_2}")

@@ -163,7 +163,7 @@ class Execution:
         return result
 
     @staticmethod
-    def _get_order_book(ticker) -> list:
+    def _get_order_book(ticker: str) -> list:
         ws = usdt_perpetual.WebSocket(
             test=True,
             ping_interval=2,  # the default is 30
@@ -282,3 +282,34 @@ class Execution:
             zscore = calculate_zscore(spread, self._config.zscore_window)
             return (coint.cointegrated, zscore)
         return (False, [])
+    
+    def get_latest_zscore(self, ticker_1: str, ticker_2: str) -> Union[Tuple[float, bool], None]:
+        orderbook_1 = Execution._get_order_book(ticker_1)
+        trade_details_1 = self.get_trade_details(orderbook_1)
+
+        orderbook_2 = Execution._get_order_book(ticker_2)
+        trade_details_2 = self.get_trade_details(orderbook_2)
+
+        if not trade_details_1 or not trade_details_2:
+            return None
+
+        series_1, series_2 = self.get_latest_klines(ticker_1, ticker_2)
+        
+        # Replace latest kline (close) price with latest orderbook "mid-price"
+        series_1[-1] = trade_details_1.order_price
+        series_2[-1] = trade_details_2.order_price
+
+        # Deviating a little from tutorial, because we do care
+        # whether pairs are still cointegrated at this point
+        cointegrated, zscore_list = self.calculate_metrics(series_1, series_2)
+        if not cointegrated:
+            print(f"Pairs ({ticker_1}) and ({ticker_2}) are no longer cointegrated")
+            return None
+        
+        zscore = zscore_list[-1]
+        if zscore > 0:
+            signal_positive = True
+        else:
+            signal_positive = False
+
+        return (zscore, signal_positive)
