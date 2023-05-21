@@ -389,6 +389,7 @@ class Execution:
         # Get active positions
         active_price, active_quantity = self.get_active_position(ticker)
 
+        # TODO: Understand what the meaning of this if statement is!
         # Determine if trade is complete --> if it is, stop placing orders
         if pos_size >= remaining_capital:
             return "Trade complete" # TODO: Make ENUM!
