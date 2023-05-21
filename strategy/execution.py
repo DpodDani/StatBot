@@ -349,3 +349,13 @@ class Execution:
         if len(active_order) > 0:
             return (active_order[0]["price"], active_order[0]["qty"])
         return (0, 0)
+
+    def query_existing_order(self, ticker: str, order_id: str) -> Union[Tuple[float, float, str], None]:
+        existing_order = self._rc.query_existing_order(ticker, order_id)
+        if existing_order:
+            return (
+                existing_order["price"],
+                existing_order["qty"],
+                existing_order["order_status"],
+            )
+        return None

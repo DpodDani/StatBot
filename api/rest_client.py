@@ -176,3 +176,17 @@ class RestClient:
             if resp["result"]["data"]:
                 data = resp["result"]["data"]
         return data
+    
+    def query_existing_order(self, symbol: str, order_id: str) -> dict:
+        data = {}
+        try:
+            resp = self._client.query_active_order(
+                symbol=symbol,
+                order_id=order_id,
+            )
+        except pybit.exceptions.InvalidRequestError:
+            print(f"Couldn't fetch order for symbol ({symbol}) and order_id ({order_id})")
+        else:
+            if resp["ret_code"] == 0 and resp["result"]["data"]:
+                data = resp["result"]["data"][0]
+        return data
