@@ -140,6 +140,14 @@ def calculate_cointegration(series_1, series_2):
     )
 
 
+# Standard deviation = measure of how dispersed data is compared to mean value (over X amount of days)
+# Higher standard deviation = smaller z-score
+#
+# Spread value = difference in price between ticker_! and ticker_2
+# Higher spread = higher z-score
+#
+# Mean = mean spread over X amount of days
+# Higher mean = z-score goes further towards/along -ve value = spread more likely to be lower than mean
 def calculate_zscore(spread_data, window):
     df = pd.DataFrame(spread_data)
     rolling_window = df.rolling(center=False, window=window)
