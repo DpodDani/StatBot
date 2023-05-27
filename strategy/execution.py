@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from typing import Union, List, Literal, Tuple
-import config
+from typing import Union, List, Literal, Tuple, Optional
+import config, json
 
 from pybit import usdt_perpetual
 from time import sleep
@@ -28,11 +28,19 @@ class PositionInfo:
     idx: int
 
 class Execution:
-    def __init__(self, config: config.Config, rest_client: RestClient, symbol_1: str, symbol_2: str):
+    def __init__(
+        self,
+        config: config.Config,
+        rest_client: RestClient,
+        symbol_1: str,
+        symbol_2: str,
+        state_file: Optional[str] = None,
+    ):
         self._config = config
         self._rc = rest_client
         self._symbol_1 = symbol_1
         self._symbol_2 = symbol_2
+        self._state_file = state_file
 
     def get_trade_details(self, orderbook: list, direction: str = "Long", capital=0) -> Union[TradeDetails, None]:
         
@@ -410,4 +418,5 @@ class Execution:
         if order_status in ["Cancelled", "Rejected", "PendingCancel"]:
             return "Try again"
         
-        
+    def manage_new_trades(self, killswitch: int):
+        return 0

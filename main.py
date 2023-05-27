@@ -3,6 +3,7 @@ import sys
 import argparse
 import logging
 
+from time import sleep
 from config import Config
 from strategy.test import Test
 from strategy.execution import Execution
@@ -31,7 +32,7 @@ if __name__ == "__main__":
         filemode="w",
         format='%(asctime)s:%(msecs)d - %(name)s [%(levelname)s]: %(message)s',
         datefmt="%H:%M:%S",
-        level=logging.DEBUG
+        level=logging.INFO # set to DEBUG to see API logs too!
     )
     logger = logging.getLogger('StatBot')
 
@@ -43,3 +44,37 @@ if __name__ == "__main__":
 
     rc = RestClient(url=config.api_url, api_key=config.api_key, api_secret=config.api_secret)
     execution = Execution(config, rc, symbol_1, symbol_2)
+
+    logger.info("Setting leverage for both symbols")
+    execution.set_leverage(symbol_1)
+    execution.set_leverage(symbol_2)
+    
+    killswitch = 0
+
+    logger.info("Seeking trades...")
+    while True:
+        sleep(3) # avoid breaching API rate limit
+
+        # Check if open trades already exist
+        symbol_1_open = execution.open_positions_found(symbol_1)
+        symbol_2_open = execution.open_positions_found(symbol_2)
+
+        # Check if active positions exist
+        symbol_1_active = execution.active_order_found(symbol_1)
+        symbol_2_active = execution.active_order_found(symbol_2)
+
+        checks = [symbol_1_open, symbol_1_active, symbol_2_open, symbol_2_active]
+        logger.info(f"Checks: {checks}")
+
+        # Can only look to manage new trades if all of the above checks are false
+        if not any(checks) and killswitch == 0:
+            logger.info("Managing new trades...")
+            killswitch = execution.manage_new_trades(killswitch)
+
+        # Close all active orders and positions
+        if killswitch == 2:
+            logger.info("Closing existing trades...")
+            killswitch = execution.close_all_positions(killswitch)
+            sleep(5) # bot waits before placing new trades
+
+        break
