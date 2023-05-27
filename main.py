@@ -1,6 +1,7 @@
 import signal
 import sys
 import argparse
+import logging
 
 from config import Config
 from strategy.test import Test
@@ -15,47 +16,30 @@ def signal_handler(sig, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
+
 # 20230521 - Cointegrated pairs: 1000BTTUSDT,CHZUSDT
-parser = argparse.ArgumentParser()
-parser.add_argument("--sym1", help="Symbol 1", default="MATICUSDT")
-parser.add_argument("--sym2", help="Symbol 2", default="IMXUSDT")
-
-args = parser.parse_args()
-symbol_1 = args.sym1
-symbol_2 = args.sym2
-
-
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--sym1", help="Symbol 1", default="MATICUSDT")
+    parser.add_argument("--sym2", help="Symbol 2", default="IMXUSDT")
+    parser.add_argument("--logfile", help="Log filename", default="statbot_logs.txt")
+    args = parser.parse_args()
+
+    logname = args.logfile
+    logging.basicConfig(
+        filename=logname,
+        filemode="w",
+        format='%(asctime)s:%(msecs)d - %(name)s [%(levelname)s]: %(message)s',
+        datefmt="%H:%M:%S",
+        level=logging.DEBUG
+    )
+    logger = logging.getLogger('StatBot')
+
+    symbol_1 = args.sym1
+    symbol_2 = args.sym2 
     config = Config()
 
-    print(f"Running for symbol 1 ({symbol_1}) and symbol 2 ({symbol_2})")
+    logger.info(f"Running for symbol 1 ({symbol_1}) and symbol 2 ({symbol_2})")
 
     rc = RestClient(url=config.api_url, api_key=config.api_key, api_secret=config.api_secret)
-
-    # test = Test(config, symbol_1, symbol_2)
-    # test.run()
-
-    # import sys
-    # sys.exit(0)
-
     execution = Execution(config, rc, symbol_1, symbol_2)
-    # price_klines = execution.get_price_klines(symbol_1)
-    # print(f"Price klines for {symbol_1}: {price_klines}")
-
-    # latest_klines_1, latest_klines_2 = execution.get_latest_klines(symbol_1, symbol_2)
-    # print(f"Latest klines for {symbol_1}: {latest_klines_1}")
-    # print(f"Latest klines for {symbol_2}: {latest_klines_2}")
-
-    # trade_liquidity = execution.get_trade_liquidity(symbol_1)
-    # print(f"Trade liquidity for {symbol_1}:", trade_liquidity)
-
-    # latest_zscore = execution.get_latest_zscore(symbol_1, symbol_2)
-    # if latest_zscore:
-    #     print(f"Latest Z-score:", latest_zscore[0], latest_zscore[1])
-    # else:
-    #     print(f"Couldn't get latest zscore for {symbol_1} and {symbol_2}")
-
-    for symbol in (symbol_1, symbol_2):
-        # print(f"Found open position for ({symbol}):", execution.open_positions_found(symbol))
-        # print(f"Found active position for ({symbol}):", execution.get_active_position(symbol))
-        print(f"Query existing order for ({symbol}):", execution.query_existing_order(symbol, "abc"))
