@@ -19,12 +19,31 @@ signal.signal(signal.SIGINT, signal_handler)
 
 
 # 20230521 - Cointegrated pairs: 1000BTTUSDT,CHZUSDT
+# 20230531 - Cointegrated pairs: SFPUSDT, USDCUSDT
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--sym1", help="Symbol 1", default="MATICUSDT")
     parser.add_argument("--sym2", help="Symbol 2", default="IMXUSDT")
     parser.add_argument("--logfile", help="Log filename", default="statbot_logs.txt")
+    parser.add_argument("--generate", help="Generate cointegration data", default=False, action="store_true")
+    parser.add_argument("--plot", help="Plot graph", default=False, action="store_true")
     args = parser.parse_args()
+
+    config = Config()
+    symbol_1 = args.sym1
+    symbol_2 = args.sym2 
+
+    if args.generate:
+        print("Generating cointegration data...")
+        t = Test(config, symbol_1, symbol_2)
+        t.run()
+        sys.exit(0)
+
+    if args.plot:
+        print(f"Plotting graph for ({symbol_1}) and ({symbol_2})...")
+        t = Test(config, symbol_1, symbol_2)
+        t.plot()
+        sys.exit(0)
 
     logname = args.logfile
     logging.basicConfig(
@@ -35,10 +54,6 @@ if __name__ == "__main__":
         level=logging.INFO # set to DEBUG to see API logs too!
     )
     logger = logging.getLogger('StatBot')
-
-    symbol_1 = args.sym1
-    symbol_2 = args.sym2 
-    config = Config()
 
     logger.info(f"Running for symbol 1 ({symbol_1}) and symbol 2 ({symbol_2})")
 
@@ -69,7 +84,7 @@ if __name__ == "__main__":
         # Can only look to manage new trades if all of the above checks are false
         if not any(checks) and killswitch == 0:
             logger.info("Managing new trades...")
-            killswitch = execution.manage_new_trades(killswitch)
+            killswitch = execution.manage_new_trades(killswitch, symbol_1, symbol_2)
 
         # Close all active orders and positions
         if killswitch == 2:

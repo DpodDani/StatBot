@@ -5,6 +5,7 @@ import config, json
 from pybit import usdt_perpetual
 from time import sleep
 import datetime
+import logging
 
 from strategy.cointegration import extract_close_prices
 from api.rest_client import RestClient
@@ -12,6 +13,8 @@ from api.rest_client import RestClient
 from statistics import mean
 
 from strategy.cointegration import calculate_cointegration, calculate_spread, calculate_zscore
+
+logger = logging.getLogger(__name__)
 
 @dataclass
 class TradeDetails:
@@ -157,10 +160,10 @@ class Execution:
     def set_leverage(self, ticker):
         return self._rc.set_leverage(ticker)
 
-    def place_order(self, trade_details: TradeDetails, direction: Literal["Long", "Short"], limit_order: bool = True) -> dict:
+    def place_order(self, trade_details: TradeDetails, direction: Literal["Long", "Short"]) -> dict:
         side = "Buy" if direction == "Long" else "Sell"
 
-        if limit_order:
+        if self._config.limit_order:
             result = self._rc.place_limit_order(
                 symbol=trade_details.symbol,
                 side=side,
@@ -299,7 +302,7 @@ class Execution:
             return (coint.cointegrated, zscore)
         return (False, [])
     
-    def get_latest_zscore(self, ticker_1: str, ticker_2: str) -> Union[Tuple[float, bool], None]:
+    def get_latest_zscore(self, ticker_1: str, ticker_2: str) -> Tuple[float, bool]:
         orderbook_1 = Execution._get_order_book(ticker_1)
         trade_details_1 = self.get_trade_details(orderbook_1)
 
@@ -307,7 +310,7 @@ class Execution:
         trade_details_2 = self.get_trade_details(orderbook_2)
 
         if not trade_details_1 or not trade_details_2:
-            return None
+            raise Exception("Need trade details for both tickers!")
 
         series_1, series_2 = self.get_latest_klines(ticker_1, ticker_2)
         
@@ -318,17 +321,7 @@ class Execution:
         # Deviating a little from tutorial, because we do care
         # whether pairs are still cointegrated at this point
         cointegrated, zscore_list = self.calculate_metrics(series_1, series_2)
-        if not cointegrated:
-            print(f"Pairs ({ticker_1}) and ({ticker_2}) are no longer cointegrated")
-            return None
-        
-        zscore = zscore_list[-1]
-        if zscore > 0:
-            signal_positive = True
-        else:
-            signal_positive = False
-
-        return (zscore, signal_positive)
+        return (zscore_list[-1], cointegrated)
     
     def open_positions_found(self, ticker: str):
         positions = self.get_position_info(ticker)
@@ -418,5 +411,77 @@ class Execution:
         if order_status in ["Cancelled", "Rejected", "PendingCancel"]:
             return "Try again"
         
-    def manage_new_trades(self, killswitch: int):
-        return 0
+    def manage_new_trades(
+        self, killswitch: int,  ticker_1: str, ticker_2: str, total_capital: int = 2000
+    ) -> int:
+        zscore, cointegrated = self.get_latest_zscore(ticker_1, ticker_2)
+        logger.info(f"Z-score: {zscore} :: cointegrated? {cointegrated}")
+
+        if not cointegrated:
+            logger.error(f"Pairs ({ticker_1}) and ({ticker_2}) are no longer cointegrated")
+            return 1
+
+        hot = False
+        logger.info(f"Signal trigger threshold: {self._config.signal_trigger_threshold}")
+        if abs(zscore) > self._config.signal_trigger_threshold:
+            hot = True
+            logger.info("-- Trade status HOT --")
+            logger.info("Placing and monitoring existing trades")
+        else:
+            logger.info("-- Trade status NOT HOT --")
+
+        # Place and monitor trades
+        if hot and killswitch == 0:
+            # Get trade history for liquidity
+            avg_qty_1, last_price_1 = self.get_trade_liquidity(ticker_1)
+            avg_qty_2, last_price_2 = self.get_trade_liquidity(ticker_2)
+
+            # If zscore is +ve, then we want to go long on ticker 2 and short of ticker 1
+            # Vice versa if zscore is -ve
+            # As per our backtesting using Jupyter notebook
+            long_ticker = ticker_2 if zscore > 0 else ticker_1
+            avg_liquidity_long = avg_qty_2 if zscore > 0 else avg_qty_1
+            last_price_long = last_price_2 if zscore > 0 else last_price_1
+
+            short_ticker = ticker_1 if zscore > 0 else ticker_2
+            avg_liquidity_short = avg_qty_1 if zscore > 0 else avg_qty_2
+            last_price_short = last_price_1 if zscore > 0 else last_price_2
+
+            # Fill targets
+
+            # Currency that I use on exchange platform (eg. GBP)
+            capital_long = total_capital * 0.5
+            capital_short = total_capital * 0.5
+
+            # All in units of USDT
+            long_initial_fill_target = avg_liquidity_long * last_price_long
+            short_initial_fill_target = avg_liquidity_short * last_price_short
+
+            logger.info(f"[Long] average liquidity: {avg_liquidity_long} -- last price: {last_price_long}")
+            logger.info(f"[Short] average liquidity: {avg_liquidity_short} -- last price: {last_price_short}")
+
+            # The idea is to use the same capital for both symbols on the initial (limit) trades
+            # Once both those trades are filled, we do another round of initial capital injection
+            # for both limit orders
+            initial_capital_injection = min(long_initial_fill_target, short_initial_fill_target)
+
+            if self._config.limit_order:
+                # if initial capital injection is more than we want to trade, then
+                # override initial captial
+                if initial_capital_injection > capital_long:
+                    initial_capital = capital_long
+                else:
+                    initial_capital = initial_capital_injection
+            else: # market order
+                initial_capital = capital_long
+
+            # Set remaining capital
+            long_remaining_capital = capital_long
+            short_remaining_capital = capital_short
+
+            logger.info(f"[Long] remaining capital: {long_remaining_capital}")
+            logger.info(f"[Short] remaining capital: {short_remaining_capital}")
+            logger.info(f"Initial capital: {initial_capital}")
+        
+        return -1
+            

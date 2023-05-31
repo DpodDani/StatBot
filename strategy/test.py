@@ -10,6 +10,9 @@ class Test:
         self._symbol_1 = symbol_1
         self._symbol_2 = symbol_2
 
+        self._prices_file = "1_price_histories.json"
+        self._cointegrated_pairs_file = "2_cointegrated_pairs.csv"
+
     def run(self):
         sa = StatArbitrage(
             ws_public_url=self._config.ws_public_url,
@@ -24,26 +27,27 @@ class Test:
         price_histories = sa.get_price_histories(symbols, self._config.limit)
 
         # 2.2) Output prices to JSON file
-        filename = "1_price_histories.json"
         if len(price_histories) > 0:
-            print(f"Writing price histories to {filename}")
-            with open(filename, "w") as fh:
+            print(f"Writing price histories to {self._prices_file}")
+            with open(self._prices_file, "w") as fh:
                 json.dump(price_histories, fh, indent=4)
-            print(f"Saved prices to {filename} for {len(price_histories)} symbols")
+            print(f"Saved prices to {self._prices_file} for {len(price_histories)} symbols")
 
         # 3) Find co-integrated pairs (and output to CSV file)
-        coint_pairs_filename = "2_cointegrated_pairs.csv"
-        with open(filename) as json_file:
+        with open(self._prices_file) as json_file:
             price_data = json.load(json_file)
             if len(price_data) > 0:
-                print(f"Getting co-integrated pairs (and saving into {coint_pairs_filename})")
+                print(f"Getting co-integrated pairs (and saving into {self._cointegrated_pairs_file})")
                 coint_pairs_df = get_cointegration_pairs(price_data)
-                coint_pairs_df.to_csv(coint_pairs_filename, index=False)
+                coint_pairs_df.to_csv(self._cointegrated_pairs_file, index=False)
 
         # 4) Plot trends and save to file (for backtesting)
+        self.plot()
+
+    def plot(self):
         symbol_1 = self._symbol_1
         symbol_2 = self._symbol_2
-        with open(filename) as json_file:
+        with open(self._prices_file) as json_file:
             price_data = json.load(json_file)
             if len(price_data) > 0:
                 print(f"Plotting trend for ({symbol_1}) and ({symbol_2})")

@@ -24,4 +24,6 @@ class Config:
 
     tradeable_capital_usdt: int = 2000 # tradeable capital to be split between both pairs
     stop_loss_fail_safe: float = 0.15 # stop loss in market order in case of drastic event
-    signal_trigger_threshold: float = 1.1 # z-score threshold which determines whether we trade or not
+    signal_trigger_threshold: float = 0.01 # z-score threshold which determines whether we trade or not
+
+    limit_order: bool = True # indicates whether to place limit orders (else use market orders)
