@@ -26,4 +26,4 @@ class Config:
     stop_loss_fail_safe: float = 0.15 # stop loss in market order in case of drastic event
     signal_trigger_threshold: float = 0.01 # z-score threshold which determines whether we trade or not
 
-    limit_order: bool = False # indicates whether to place limit orders (else use market orders)
+    limit_order: bool = True # indicates whether to place limit orders (else use market orders)

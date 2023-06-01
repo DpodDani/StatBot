@@ -71,6 +71,7 @@ if __name__ == "__main__":
     execution.set_leverage(symbol_2)
     
     killswitch = 0
+    signal_side = ""
 
     logger.info("Seeking trades...")
     while True:
@@ -88,10 +89,28 @@ if __name__ == "__main__":
         checks = [symbol_1_open, symbol_1_active, symbol_2_open, symbol_2_active]
         logger.info(f"Checks: {checks}")
 
+        manage_new_trades = not any(checks)
+
         # Can only look to manage new trades if all of the above checks are false
-        if not any(checks) and killswitch == 0:
+        if manage_new_trades and killswitch == 0:
             logger.info("Managing new trades...")
-            killswitch = execution.manage_new_trades(killswitch, symbol_1, symbol_2, config.tradeable_capital_usdt)
+            killswitch, signal_side = execution.manage_new_trades(killswitch)
+
+        # check for signal to be false
+        # if the signal_side was positive, and now the zscore is negative, it means a mean reversion
+        # has happened, so we need to close the trades
+        # vice versa, if the signal_side was negative, but now the zscore is positive, mean reversion
+        # happened, so we need to close the trades
+        if killswitch == 1:
+            zscore, _ = execution.get_latest_zscore(symbol_1, symbol_2)
+            if signal_side == "positive" and zscore < 0:
+                killswitch = 2
+            if signal_side == "negative" and zscore > 0:
+                killswitch = 2
+
+            # Put back to zero if trades are closed
+            if manage_new_trades and killswitch != 2:
+                killswitch = 0
 
         # Close all active orders and positions
         if killswitch == 2:

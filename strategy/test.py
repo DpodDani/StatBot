@@ -41,9 +41,7 @@ class Test:
                 coint_pairs_df = get_cointegration_pairs(price_data)
                 coint_pairs_df.to_csv(self._cointegrated_pairs_file, index=False)
 
-        # 4) Plot trends and save to file (for backtesting)
-        self.plot()
-
+    # 4) Plot trends and save to file (for backtesting)
     def plot(self):
         symbol_1 = self._symbol_1
         symbol_2 = self._symbol_2

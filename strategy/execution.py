@@ -416,9 +416,10 @@ class Execution:
         if order_status in ["Cancelled", "Rejected", "PendingCancel"]:
             return "Try again"
         
-    def manage_new_trades(
-        self, killswitch: int,  ticker_1: str, ticker_2: str, total_capital: int = 2000
-    ) -> int:
+    def manage_new_trades(self, killswitch: int) -> Tuple[int, str]:
+        signal_side = ""
+        ticker_1, ticker_2 = self._symbol_1, self._symbol_2
+
         zscore, cointegrated = self.get_latest_zscore(ticker_1, ticker_2)
         logger.info(f"Z-score: {zscore} :: cointegrated? {cointegrated}")
 
@@ -457,8 +458,8 @@ class Execution:
             # Fill targets
 
             # Currency that I use on exchange platform (eg. GBP)
-            capital_long = total_capital * 0.5
-            capital_short = total_capital * 0.5
+            capital_long = self._config.tradeable_capital_usdt * 0.5
+            capital_short = self._config.tradeable_capital_usdt * 0.5
 
             # All in units of USDT
             long_initial_fill_target = avg_liquidity_long * last_price_long
@@ -573,16 +574,5 @@ class Execution:
                         self._rc.cancel_all_active_orders(short_ticker)
                         killswitch = 1
 
-        # check for signal to be false
-        # if the signal_side was positive, and now the zscore is negative, it means a mean reversion
-        # has happened, so we need to close the trades
-        # vice versa, if the signal_side was negative, but now the zscore is positive, mean reversion
-        # happened, so we need to close the trades
-        if killswitch == 1:
-            if signal_side == "positive" and zscore < 0:
-                killswitch = 2
-            if signal_side == "negative" and zscore > 0:
-                killswitch = 2
-
-        return killswitch
+        return (killswitch, signal_side)
             
