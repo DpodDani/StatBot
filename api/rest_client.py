@@ -1,7 +1,7 @@
 import datetime
 from time import sleep
 
-from typing import Tuple, Union
+from typing import Union, List, Literal
 
 import pybit.exceptions
 from pybit import usdt_perpetual
@@ -87,12 +87,12 @@ class RestClient:
         else:
             return False
         
-    def cancel_all_active_orders(self, symbol: str) -> bool:
+    def cancel_all_active_orders(self, symbol: str) -> List[str]:
         resp = self._client.cancel_all_active_orders(symbol=symbol)
         if resp["ret_code"] != 0:
-            return False
+            return []
         else:
-            return True
+            return resp["result"]
         
     def set_leverage(self, symbol: str, buy_leverage: int = 1, sell_leverage: int = 1) -> bool:
         try:
@@ -111,7 +111,7 @@ class RestClient:
         else:
             return False
         
-    def place_limit_order(self, symbol: str, side: str, qty: float, price: float, stop_loss: float) -> dict:
+    def place_limit_order(self, symbol: str, side: Literal["Buy", "Sell"], qty: float, price: float, stop_loss: float) -> dict:
         resp = self._client.place_active_order(
             symbol=symbol,
             side=side,
@@ -132,7 +132,7 @@ class RestClient:
 
         return resp
         
-    def place_market_order(self, symbol: str, side: str, qty: float, stop_loss: float) -> dict:
+    def place_market_order(self, symbol: str, side: Literal["Buy", "Sell"], qty: float, stop_loss: float) -> dict:
         resp = self._client.place_active_order(
             symbol=symbol,
             side=side,

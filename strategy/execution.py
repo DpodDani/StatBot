@@ -45,7 +45,7 @@ class Execution:
         self._symbol_2 = symbol_2
         self._state_file = state_file
 
-    def get_trade_details(self, orderbook: list, direction: str = "Long", capital=0) -> Union[TradeDetails, None]:
+    def get_trade_details(self, orderbook: list, direction: str = "Long", capital: float = 0) -> Union[TradeDetails, None]:
         
         # Set calculation and output variables
         price_rounding = 20
@@ -144,7 +144,10 @@ class Execution:
 
         for symbol in [self._symbol_1, self._symbol_2]:
             res = self._rc.cancel_all_active_orders(symbol)
-            print(f"Result from cancelling all active orders for symbol ({symbol}):", res)
+            if res:
+                logger.warning(f"Cancelled these active orders for symbol ({symbol}): {', '.join(res)}")
+            else:
+                logger.info(f"No active orders cancelled for {symbol}")
 
             pos_info = self.get_position_info(symbol)
             if len(pos_info) < 1:
@@ -205,21 +208,21 @@ class Execution:
 
         return orderbooks[0]
 
-    def initalise_order_execution(self, ticker: str, direction: Literal["Long", "Short"], capital: int) -> int:
+    def initalise_order_execution(self, ticker: str, direction: Literal["Long", "Short"], capital: float) -> str:
         orderbook = Execution._get_order_book(ticker)
         trade_details = self.get_trade_details(orderbook, direction, capital)
 
         if not trade_details:
             print("Orderbook is empty, so cannot initialise order exeuction")
-            return -1
+            return ""
 
         order = self.place_order(trade_details, direction)
         if "result" in order:
             if "order_id" in order["result"]:
-                return int(order["results"]["order_id"])
+                return order["result"]["order_id"]
             
         print("Did not place order :(")
-        return -1
+        return ""
     
     def _get_timestamps(self) -> Tuple[int, int, int]:
         timeframe = self._config.interval
@@ -417,9 +420,9 @@ class Execution:
         zscore, cointegrated = self.get_latest_zscore(ticker_1, ticker_2)
         logger.info(f"Z-score: {zscore} :: cointegrated? {cointegrated}")
 
-        if not cointegrated:
-            logger.error(f"Pairs ({ticker_1}) and ({ticker_2}) are no longer cointegrated")
-            return 1
+        # if not cointegrated:
+        #     logger.error(f"Pairs ({ticker_1}) and ({ticker_2}) are not cointegrated")
+        #     return 1
 
         hot = False
         logger.info(f"Signal trigger threshold: {self._config.signal_trigger_threshold}")
@@ -482,6 +485,34 @@ class Execution:
             logger.info(f"[Long] remaining capital: {long_remaining_capital}")
             logger.info(f"[Short] remaining capital: {short_remaining_capital}")
             logger.info(f"Initial capital: {initial_capital}")
+
+            # Trade until filled or signal is false
+            long_order_status = ""
+            short_order_status = ""
+            long_count = 0
+            short_count = 0
+
+            while killswitch == 0:
+                # place long order
+                if long_count == 0:
+                    long_order_id = self.initalise_order_execution(long_ticker, "Long", initial_capital)
+                    long_count = 1 if long_order_id != "" else 0
+                    long_remaining_capital = long_remaining_capital - initial_capital
+
+                    logger.info(f"[Long] placed order for {long_ticker}: {long_order_id}")
+
+                # place long order
+                if short_count == 0:
+                    short_order_id = self.initalise_order_execution(short_ticker, "Short", initial_capital)
+                    short_count = 1 if short_order_id != "" else 0
+                    short_remaining_capital = short_remaining_capital - initial_capital
+
+                    logger.info(f"[Short] placed order for {short_ticker}: {short_order_id}")
+
+                if not self._config.limit_order:
+                    killswitch = 1
+
+                sleep(3) # give time for orders to register
         
         return -1
             

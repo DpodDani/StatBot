@@ -22,11 +22,12 @@ signal.signal(signal.SIGINT, signal_handler)
 # 20230531 - Cointegrated pairs: SFPUSDT, USDCUSDT
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sym1", help="Symbol 1", default="MATICUSDT")
-    parser.add_argument("--sym2", help="Symbol 2", default="IMXUSDT")
+    parser.add_argument("--sym1", help="Symbol 1", default="SOLUSDT")
+    parser.add_argument("--sym2", help="Symbol 2", default="ETHUSDT")
     parser.add_argument("--logfile", help="Log filename", default="statbot_logs.txt")
     parser.add_argument("--generate", help="Generate cointegration data", default=False, action="store_true")
     parser.add_argument("--plot", help="Plot graph", default=False, action="store_true")
+    parser.add_argument("--close_all", help="Cancel all positions", default=False, action="store_true")
     args = parser.parse_args()
 
     config = Config()
@@ -59,6 +60,11 @@ if __name__ == "__main__":
 
     rc = RestClient(url=config.api_url, api_key=config.api_key, api_secret=config.api_secret)
     execution = Execution(config, rc, symbol_1, symbol_2)
+
+    if args.close_all:
+        logger.warning(f"Closing all active orders for {symbol_1} and {symbol_2}")
+        res = execution.close_all_positions(2)
+        sys.exit(0)
 
     logger.info("Setting leverage for both symbols")
     execution.set_leverage(symbol_1)
