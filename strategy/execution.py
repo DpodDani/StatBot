@@ -439,16 +439,18 @@ class Execution:
             avg_qty_1, last_price_1 = self.get_trade_liquidity(ticker_1)
             avg_qty_2, last_price_2 = self.get_trade_liquidity(ticker_2)
 
+            zscore_positive = zscore > 0
+
             # If zscore is +ve, then we want to go long on ticker 2 and short of ticker 1
             # Vice versa if zscore is -ve
             # As per our backtesting using Jupyter notebook
-            long_ticker = ticker_2 if zscore > 0 else ticker_1
-            avg_liquidity_long = avg_qty_2 if zscore > 0 else avg_qty_1
-            last_price_long = last_price_2 if zscore > 0 else last_price_1
+            long_ticker = ticker_2 if zscore_positive else ticker_1
+            avg_liquidity_long = avg_qty_2 if zscore_positive else avg_qty_1
+            last_price_long = last_price_2 if zscore_positive else last_price_1
 
-            short_ticker = ticker_1 if zscore > 0 else ticker_2
-            avg_liquidity_short = avg_qty_1 if zscore > 0 else avg_qty_2
-            last_price_short = last_price_1 if zscore > 0 else last_price_2
+            short_ticker = ticker_1 if zscore_positive else ticker_2
+            avg_liquidity_short = avg_qty_1 if zscore_positive else avg_qty_2
+            last_price_short = last_price_1 if zscore_positive else last_price_2
 
             # Fill targets
 
@@ -509,10 +511,72 @@ class Execution:
 
                     logger.info(f"[Short] placed order for {short_ticker}: {short_order_id}")
 
-                if not self._config.limit_order:
+                if zscore > 0:
+                    signal_side = "positive"
+                else:
+                    signal_sde = "negative"
+
+                if not self._config.limit_order and long_count and short_count:
                     killswitch = 1
 
                 sleep(3) # give time for orders to register
-        
-        return -1
+
+                # Check limit orders and ensure z-score is still within range
+                new_zscore, _ = self.get_latest_zscore(ticker_1, ticker_2)
+                if killswitch == 0:
+                    new_zscore_positive = new_zscore > 0
+                    # checks if zscore sign is still the same, compared to when we initially
+                    # fetched the zscore
+                    if abs(new_zscore) > 0.9 * self._config.signal_trigger_threshold \
+                    and new_zscore_positive == zscore_positive:
+                        # check long order status
+                        if long_count == 1:
+                            long_order_status = self.check_order(long_ticker, long_order_id, long_remaining_capital, "Long")
+
+                        # check short order status
+                        if short_count == 1:
+                            short_order_status = self.check_order(short_ticker, short_order_id, short_remaining_capital, "Short")
+
+                        # if orders still active, do nothing
+                        if long_order_status == "Order active" or short_order_status == "Order active":
+                            continue
+
+                        # if orders partially filled, do nothing
+                        if long_order_status == "Partial fill" or short_order_status == "Partial fill":
+                            continue
+
+                        # if trade is complete, stop opening new trades
+                        if long_order_status == "Trade complete" and short_order_status == "Trade complete":
+                            killswitch = 1
+
+                        # if position filled, place more trades (because capital is not yet all gone)
+                        if long_order_status == "Position filled" and short_order_status == "Position filled":
+                            # this will trigger if statement above that places orders
+                            long_count = 0
+                            short_count = 0
+
+                        # if order cancelled for long, try again
+                        if long_order_status == "Try again":
+                            long_count = 0
+
+                        # if order cancelled for short, try again
+                        if short_order_status == "Try again":
+                            short_count = 0
+                    else:
+                        self._rc.cancel_all_active_orders(long_ticker)
+                        self._rc.cancel_all_active_orders(short_ticker)
+                        killswitch = 1
+
+        # check for signal to be false
+        # if the signal_side was positive, and now the zscore is negative, it means a mean reversion
+        # has happened, so we need to close the trades
+        # vice versa, if the signal_side was negative, but now the zscore is positive, mean reversion
+        # happened, so we need to close the trades
+        if killswitch == 1:
+            if signal_side == "positive" and zscore < 0:
+                killswitch = 2
+            if signal_side == "negative" and zscore > 0:
+                killswitch = 2
+
+        return killswitch
             
