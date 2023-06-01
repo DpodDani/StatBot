@@ -187,6 +187,6 @@ class RestClient:
         except pybit.exceptions.InvalidRequestError:
             print(f"Couldn't fetch order for symbol ({symbol}) and order_id ({order_id})")
         else:
-            if resp["ret_code"] == 0 and resp["result"]["data"]:
-                data = resp["result"]["data"][0]
+            if resp["ret_code"] == 0 and resp["result"]:
+                data = resp["result"]
         return data

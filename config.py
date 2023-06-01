@@ -17,13 +17,13 @@ class Config:
 
     # need to know level of accuracy required for price and quantity values
     # different number of decimal places can be used for the price and/or quantity for different tickers
-    price_rounding_ticker_1: int = 3
+    price_rounding_ticker_1: int = 2
     price_rounding_ticker_2: int = 2
-    quantity_rounding_ticker_1: int = 1
+    quantity_rounding_ticker_1: int = 3
     quantity_rounding_ticker_2: int = 2
 
-    tradeable_capital_usdt: int = 2000 # tradeable capital to be split between both pairs
+    tradeable_capital_usdt: int = 400 # tradeable capital to be split between both pairs
     stop_loss_fail_safe: float = 0.15 # stop loss in market order in case of drastic event
     signal_trigger_threshold: float = 0.01 # z-score threshold which determines whether we trade or not
 
-    limit_order: bool = True # indicates whether to place limit orders (else use market orders)
+    limit_order: bool = False # indicates whether to place limit orders (else use market orders)

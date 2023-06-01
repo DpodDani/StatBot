@@ -395,7 +395,9 @@ class Execution:
 
         # TODO: Understand what the meaning of this if statement is!
         # Determine if trade is complete --> if it is, stop placing orders
-        if pos_size >= remaining_capital:
+        if pos_size > 0 and pos_size >= remaining_capital:
+            print("Position size:", pos_size)
+            print("Remaining capital:", remaining_capital)
             return "Trade complete" # TODO: Make ENUM!
 
         # Determine action needed --> if positions filled, buy more
@@ -514,7 +516,7 @@ class Execution:
                 if zscore > 0:
                     signal_side = "positive"
                 else:
-                    signal_sde = "negative"
+                    signal_side = "negative"
 
                 if not self._config.limit_order and long_count and short_count:
                     killswitch = 1
@@ -523,6 +525,7 @@ class Execution:
 
                 # Check limit orders and ensure z-score is still within range
                 new_zscore, _ = self.get_latest_zscore(ticker_1, ticker_2)
+                logger.info(f"New z-score: {new_zscore} -- old z-score: {zscore}")
                 if killswitch == 0:
                     new_zscore_positive = new_zscore > 0
                     # checks if zscore sign is still the same, compared to when we initially
@@ -536,6 +539,9 @@ class Execution:
                         # check short order status
                         if short_count == 1:
                             short_order_status = self.check_order(short_ticker, short_order_id, short_remaining_capital, "Short")
+
+                        logger.info(f"[Long] order status: {long_order_status}")
+                        logger.info(f"[Short] order status: {short_order_status}")
 
                         # if orders still active, do nothing
                         if long_order_status == "Order active" or short_order_status == "Order active":

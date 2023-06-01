@@ -22,7 +22,7 @@ signal.signal(signal.SIGINT, signal_handler)
 # 20230531 - Cointegrated pairs: SFPUSDT, USDCUSDT
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sym1", help="Symbol 1", default="SOLUSDT")
+    parser.add_argument("--sym1", help="Symbol 1", default="BTCUSDT")
     parser.add_argument("--sym2", help="Symbol 2", default="ETHUSDT")
     parser.add_argument("--logfile", help="Log filename", default="statbot_logs.txt")
     parser.add_argument("--generate", help="Generate cointegration data", default=False, action="store_true")
@@ -74,6 +74,7 @@ if __name__ == "__main__":
 
     logger.info("Seeking trades...")
     while True:
+        print("Killswitch:", killswitch)
         sleep(3) # avoid breaching API rate limit
 
         # Check if open trades already exist
@@ -90,12 +91,10 @@ if __name__ == "__main__":
         # Can only look to manage new trades if all of the above checks are false
         if not any(checks) and killswitch == 0:
             logger.info("Managing new trades...")
-            killswitch = execution.manage_new_trades(killswitch, symbol_1, symbol_2)
+            killswitch = execution.manage_new_trades(killswitch, symbol_1, symbol_2, config.tradeable_capital_usdt)
 
         # Close all active orders and positions
         if killswitch == 2:
             logger.info("Closing existing trades...")
             killswitch = execution.close_all_positions(killswitch)
             sleep(5) # bot waits before placing new trades
-
-        break
