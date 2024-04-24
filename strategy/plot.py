@@ -48,10 +48,17 @@ def plot_trends(symbol_data_1, symbol_data_2, window):
 
     fig, axis = plt.subplots(3, figsize=(16, 8))
     fig.suptitle(f"Price and Spread - {symbol_1} vs {symbol_2}")
-    axis[0].plot(series_1)
-    axis[0].plot(series_2)
-    axis[1].plot(spread)
-    axis[2].plot(zscore)
+    axis[0].plot(series_1, label=symbol_1)
+    axis[0].plot(series_2, label=symbol_2)
+    axis[1].plot(spread, label="Spread")
+    axis[2].plot(zscore, label="Z-score")
+
+    axis[0].set_ylabel("Price")
+
+    axis[0].legend()
+    axis[1].legend()
+    axis[2].legend()
+
     plt.show()
 
 

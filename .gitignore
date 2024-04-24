@@ -6,3 +6,5 @@ Pipfile
 *.json
 *.csv
 *.png
+*.ipynb
+*.txt

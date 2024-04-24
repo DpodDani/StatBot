@@ -1,15 +1,13 @@
-import os
 import signal
 import sys
-import json
+import argparse
+import logging
 
-from strategy.stat_arbitrage import StatArbitrage
-from strategy.cointegration import get_cointegration_pairs
-from strategy.plot import plot_trends
-
-from dotenv import load_dotenv
-
-load_dotenv()
+from time import sleep
+from config import Config
+from strategy.test import Test
+from strategy.execution import Execution
+from api.rest_client import RestClient
 
 
 def signal_handler(sig, frame):
@@ -19,51 +17,103 @@ def signal_handler(sig, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
-api_key = os.getenv("TESTNET_API_KEY")
-api_secret = os.getenv("TESTNET_API_SECRET")
-api_url = os.getenv("TESTNET_REST_BASE_URL")
-ws_public_url = os.getenv("TESTNET_WS_PUBLIC_URL")
 
-interval = int(os.getenv("TIME_RANGE"))
-zscore_window = int(os.getenv("Z_SCORE_LIMIT"))
-
+# 20230521 - Cointegrated pairs: 1000BTTUSDT,CHZUSDT
+# 20230531 - Cointegrated pairs: SFPUSDT, USDCUSDT
 if __name__ == "__main__":
-    sa = StatArbitrage(
-        ws_public_url=ws_public_url,
-        rest_api_url=api_url,
-        price_interval=interval,
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--sym1", help="Symbol 1", default="BTCUSDT")
+    parser.add_argument("--sym2", help="Symbol 2", default="ETHUSDT")
+    parser.add_argument("--logfile", help="Log filename", default="statbot_logs.txt")
+    parser.add_argument("--generate", help="Generate cointegration data", default=False, action="store_true")
+    parser.add_argument("--plot", help="Plot graph", default=False, action="store_true")
+    parser.add_argument("--close_all", help="Cancel all positions", default=False, action="store_true")
+    args = parser.parse_args()
+
+    config = Config()
+    symbol_1 = args.sym1
+    symbol_2 = args.sym2 
+
+    if args.generate:
+        print("Generating cointegration data...")
+        t = Test(config, symbol_1, symbol_2)
+        t.run()
+        sys.exit(0)
+
+    if args.plot:
+        print(f"Plotting graph for ({symbol_1}) and ({symbol_2})...")
+        t = Test(config, symbol_1, symbol_2)
+        t.plot()
+        sys.exit(0)
+
+    logname = args.logfile
+    logging.basicConfig(
+        filename=logname,
+        filemode="w",
+        format='%(asctime)s:%(msecs)d - %(name)s [%(levelname)s]: %(message)s',
+        datefmt="%H:%M:%S",
+        level=logging.INFO # set to DEBUG to see API logs too!
     )
+    logger = logging.getLogger('StatBot')
 
-    # 1) Get tradable symbols
-    # symbols = sa.get_tradeable_symbols()
+    logger.info(f"Running for symbol 1 ({symbol_1}) and symbol 2 ({symbol_2})")
 
-    # 2.1) Get price history
-    # price_histories = sa.get_price_histories(symbols)
+    rc = RestClient(url=config.api_url, api_key=config.api_key, api_secret=config.api_secret)
+    execution = Execution(config, rc, symbol_1, symbol_2)
 
-    # 2.2) Output prices to JSON file
-    filename = "1_price_histories.json"
-    # if len(price_histories) > 0:
-    #     print(f"Writing price histories to {filename}")
-    #     with open(filename, "w") as fh:
-    #         json.dump(price_histories, fh, indent=4)
-    #     print(f"Saved prices to {filename} for {len(price_histories)} symbols")
+    if args.close_all:
+        logger.warning(f"Closing all active orders for {symbol_1} and {symbol_2}")
+        res = execution.close_all_positions(2)
+        sys.exit(0)
 
-    # 3) Find co-integrated pairs (and output to CSV file)
-    coint_pairs_filename = "2_cointegrated_pairs.csv"
-    # with open(filename) as json_file:
-    #     price_data = json.load(json_file)
-    #     if len(price_data) > 0:
-    #           print(f"Getting co-integrated pairs (and saving into {coint_pairs_filename})")
-    #         coint_pairs_df = get_cointegration_pairs(price_data)
-    #         coint_pairs_df.to_csv(coint_pairs_filename, index=False)
+    logger.info("Setting leverage for both symbols")
+    execution.set_leverage(symbol_1)
+    execution.set_leverage(symbol_2)
+    
+    killswitch = 0
+    signal_side = ""
 
-    # 4) Plot trends and save to file (for backtesting)
-    symbol_1 = "BLZUSDT"
-    symbol_2 = "SLPUSDT"
-    with open(filename) as json_file:
-        price_data = json.load(json_file)
-        if len(price_data) > 0:
-            print(f"Plotting trend for ({symbol_1}) and ({symbol_2})")
-            symbol_data_1 = {"symbol": symbol_1, "data": price_data[symbol_1]["result"]}
-            symbol_data_2 = {"symbol": symbol_2, "data": price_data[symbol_2]["result"]}
-            plot_trends(symbol_data_1, symbol_data_2, zscore_window)
+    logger.info("Seeking trades...")
+    while True:
+        print("Killswitch:", killswitch)
+        sleep(3) # avoid breaching API rate limit
+
+        # Check if open trades already exist
+        symbol_1_open = execution.open_positions_found(symbol_1)
+        symbol_2_open = execution.open_positions_found(symbol_2)
+
+        # Check if active positions exist
+        symbol_1_active = execution.active_order_found(symbol_1)
+        symbol_2_active = execution.active_order_found(symbol_2)
+
+        checks = [symbol_1_open, symbol_1_active, symbol_2_open, symbol_2_active]
+        logger.info(f"Checks: {checks}")
+
+        manage_new_trades = not any(checks)
+
+        # Can only look to manage new trades if all of the above checks are false
+        if manage_new_trades and killswitch == 0:
+            logger.info("Managing new trades...")
+            killswitch, signal_side = execution.manage_new_trades(killswitch)
+
+        # check for signal to be false
+        # if the signal_side was positive, and now the zscore is negative, it means a mean reversion
+        # has happened, so we need to close the trades
+        # vice versa, if the signal_side was negative, but now the zscore is positive, mean reversion
+        # happened, so we need to close the trades
+        if killswitch == 1:
+            zscore, _ = execution.get_latest_zscore(symbol_1, symbol_2)
+            if signal_side == "positive" and zscore < 0:
+                killswitch = 2
+            if signal_side == "negative" and zscore > 0:
+                killswitch = 2
+
+            # Put back to zero if trades are closed
+            if manage_new_trades and killswitch != 2:
+                killswitch = 0
+
+        # Close all active orders and positions
+        if killswitch == 2:
+            logger.info("Closing existing trades...")
+            killswitch = execution.close_all_positions(killswitch)
+            sleep(5) # bot waits before placing new trades
